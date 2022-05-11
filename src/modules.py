@@ -47,14 +47,11 @@ class CrossVersion(Thread):
                 cur_vers = vers
                 if not self.__start_browsers(cur_vers):
                     continue
-
             html_file, _ = hpr.pop_from_queue()
 
             hashes = self.__cross_version_test_html(html_file)
             if hashes and ImageDiff.diff_images(hashes[0], hashes[1]):
                 hpr.update_postq(vers, html_file, hashes)
-        import time
-        time.sleep(20)
         self.__stop_browsers()
 
 
@@ -160,3 +157,31 @@ class Bisecter(Thread):
             hpr.insert_to_queue(new_vers, html_file, hashes)
 
         self.__stop_ref_browser()
+
+
+class R2Z2:
+    def __init__(self, vers: tuple[int, int, int], inputs: list, output_dir: str, num_of_threads: int):
+        print(inputs)
+        self.__ioq = IOQueue(vers, inputs)
+        self.__out_dir = output_dir
+        self.__num_of_threads = num_of_threads
+
+
+    def test_wrapper(self, test_class: object):
+        threads = []
+        for i in range(self.__num_of_threads):
+            threads.append(test_class(self.__ioq))
+
+        for th in threads:
+            th.start()
+
+        for th in threads:
+            th.join()
+
+        self.__ioq.move_to_preqs()
+
+    def process(self):
+        self.test_wrapper(CrossVersion)
+#        self.test_wrapper(Oracle)
+#        self.test_wrapper(Bisecter)
+

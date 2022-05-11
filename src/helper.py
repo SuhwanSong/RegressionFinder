@@ -67,6 +67,7 @@ class IOQueue:
         self.__preqs.clear()
         self.__preqs = self.__postqs.copy()
         self.__postqs.clear()
+        self.__vers = self.__select_vers()
         self.__lock.release()
 
 
@@ -96,5 +97,4 @@ class ImageDiff:
 
     def diff_images(hash_A, hash_B):
         THRE = 64
-        print (hash_A - hash_B)
         return hash_A - hash_B  > THRE

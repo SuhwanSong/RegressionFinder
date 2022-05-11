@@ -1,39 +1,9 @@
 import argparse
 
 from random import seed
-
-from helper import IOQueue
 from helper import FileManager
 
-from modules import CrossVersion
-from modules import Oracle
-from modules import Bisecter
-
-
-class R2Z2:
-    def __init__(self, vers: tuple[int, int, int], inputs: list, output_dir: str, num_of_threads: int):
-
-        self.__ioq = IOQueue(vers, inputs)
-        self.__out_dir = output_dir
-        self.__num_of_threads = num_of_threads
-
-
-    def __test_wrapper(self, test_class: object):
-        threads = []
-        for i in range(self.__num_of_threads):
-            threads.append(test_class(self.__ioq))
-
-        for th in threads:
-            th.start()
-
-        for th in threads:
-            th.join()
-        self.__ioq.move_to_preqs()
-
-    def process(self):
-        self.__test_wrapper(CrossVersion)
-        self.__test_wrapper(Oracle)
-        self.__test_wrapper(Bisecter)
+from modules import R2Z2
 
 
 def main():

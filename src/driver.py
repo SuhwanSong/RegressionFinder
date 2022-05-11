@@ -1,4 +1,4 @@
-import os
+from os.path import dirname, join, abspath, splitext
 
 from pathlib import Path
 from helper import ImageDiff
@@ -11,7 +11,7 @@ class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
         if browser_type == 'chrome':
             options = [
-#                    '--headless',
+                    '--headless',
                     '--disable-seccomp-sandbox --no-sandbox',
                     '--disable-logging',
 #                    '--disable-gpu'
@@ -27,7 +27,8 @@ class Browser:
         else:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
 
-        browser_path = os.path.join(browser_type, str(commit_version), browser_type)
+        parent_dir = dirname(dirname(abspath(__file__)))
+        browser_path = join(parent_dir, browser_type, str(commit_version), browser_type)
         self.options.binary_location = browser_path
 
         for op in options: self.options.add_argument(op)
@@ -41,11 +42,11 @@ class Browser:
         self.__num_of_run = 0
         try:
             if self.__browser_type == 'chrome':
-                self.browser = webdriver.Chrome(chrome_options=self.options,
+                self.browser = webdriver.Chrome(options=self.options,
                         executable_path=self.options.binary_location + 'driver')
 
             elif self.__browser_type == 'firefox':
-                self.browser = webdriver.Firefox(firefox_options=self.options,
+                self.browser = webdriver.Firefox(options=self.options,
                         executable_path=self.options.binary_location + 'driver')
 
             else:
@@ -97,11 +98,12 @@ class Browser:
 
     def run_html(self, html_file):
         try:
-            self.browser.get('file://' + os.path.abspath(html_file))
-            self.exec_script(JSCODE)
+            self.browser.get('file://' + abspath(html_file))
+            #self.exec_script(JSCODE)
             #self.exec_script(INTEROP.FONT)
-            self.exec_script('trigger()')
+            self.exec_script('trigger();')
         except Exception as ex:
+            print (ex)
             self.kill_browser()
             self.setup_browser()
             return False
@@ -111,7 +113,7 @@ class Browser:
     def get_hash_from_html(self, html_file, save_shot: bool = False):
         if not self.run_html(html_file): return
 
-        name_noext = os.path.splitext(html_file)[0]
+        name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
 
         hash_v = self.__screenshot_and_hash(screenshot_name)
