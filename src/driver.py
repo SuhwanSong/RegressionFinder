@@ -63,6 +63,8 @@ class Browser:
         self.browser.set_script_timeout(TIMEOUT)
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
+
+        print (f'{self.__browser_type} {self.version} starts ...')
         return True
 
 
