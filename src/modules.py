@@ -95,9 +95,8 @@ class Oracle(Thread):
                 raise ValueError('Something wrong in hashes...')
 
             ref_hash = self.__ref_br.get_hash_from_html(html_file)
-
             if ref_hash and self.__is_regression(hashes, ref_hash):
-                hpr.update_postq(key, html_file, hashes)
+                hpr.update_postq(vers, html_file, hashes)
 
         self.__stop_ref_browser()
 
@@ -182,6 +181,6 @@ class R2Z2:
 
     def process(self):
         self.test_wrapper(CrossVersion)
-#        self.test_wrapper(Oracle)
+        self.test_wrapper(Oracle)
 #        self.test_wrapper(Bisecter)
 
