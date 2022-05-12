@@ -161,9 +161,8 @@ class Bisecter(Thread):
 
 
 class R2Z2:
-    def __init__(self, vers: tuple[int, int, int], inputs: list, output_dir: str, num_of_threads: int):
-        print(inputs)
-        self.__ioq = IOQueue(vers, inputs)
+    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int):
+        self.__ioq = IOQueue(input_version_pair)
         self.__out_dir = output_dir
         self.__num_of_threads = num_of_threads
 

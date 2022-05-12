@@ -14,14 +14,14 @@ from typing import Optional
 
 
 class IOQueue:
-    def __init__(self, vers: tuple[int, int, int], inputs: list) -> None:
+    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]]) -> None:
 
         self.__lock = Lock()
         self.__preqs = defaultdict(Queue)
         self.__postqs = defaultdict(Queue)
 
-        for testcase in inputs:
-            self.__preqs[vers].put((testcase, ()))
+        for testcase, vers in input_version_pair.items():
+            self.insert_to_queue(vers, testcase, ())
 
         self.__vers = self.__select_vers()
 
