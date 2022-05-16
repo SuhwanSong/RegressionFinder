@@ -1,28 +1,10 @@
-import sys
-import os
 import requests
-import json
-
-def get_chromium_base_position(version):
-    url = "https://omahaproxy.appspot.com/deps.json"
-
-    querystring = {"version":version}
-
-    r = requests.request("GET", url, params=querystring)
-
-    try:
-        r.raise_for_status()
-        return json.loads(r.text)['chromium_base_position']
-    except:
-        return None
+import os
+import sys
 
 def get_chromium_binary_download_url(position):
     url = f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{position}%2Fchrome-linux.zip?alt=media"
     return url
-
-def get_chromium_binary_name(version, position):
-    name = f"{version}-{position}-chrome-linux.zip"
-    return name
 
 def get_chromium_binary_name_position(position):
     name = f"{position}-chrome-linux.zip"
@@ -31,10 +13,6 @@ def get_chromium_binary_name_position(position):
 def get_chromium_driver_download_url(position):
     url = f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{position}%2Fchromedriver_linux64.zip?alt=media"
     return url
-
-def get_chromium_driver_name(version, position):
-    name = f"{version}-{position}-chromedriver-linux64.zip"
-    return name
 
 def get_chromium_driver_name_position(position):
     name = f"{position}-chromedriver-linux64.zip"
@@ -52,29 +30,6 @@ def download(url, name, base="."):
     except:
         return False
 
-def download_chromium(version):
-    position = get_chromium_base_position(version)
-    if not position:
-        print("[-] Version is not correct :(")
-        return 1
-
-    url = get_chromium_binary_download_url(position)
-    name = get_chromium_binary_name(version, position)
-    ret = download(url, name)
-    if not ret:
-        print("[-] No pre-built binary :(")
-        return 1
-
-    url = get_chromium_driver_download_url(position)
-    name = get_chromium_driver_name(version, position)
-    ret = download(url, name)
-    
-    if not ret:
-        print("[-] No pre-built binary :(")
-        return 1
-    
-    return 0
-
 def download_chromium_position(position):
     if not position:
         print("[-] Version is not correct :(")
@@ -90,9 +45,9 @@ def download_chromium_position(position):
         print("[-] No pre-built binary :(")
         return 1
    
-    os.system("unzip " + name)
-    os.system("mv chrome-linux " + position)
-    os.system("rm -rf " + name)
+    os.system(f"unzip {name} &> /dev/null")
+    os.system(f"mv chrome-linux {position} &> /dev/null")
+    os.system(f"rm -rf {name} &> /dev/null")
 
     url = get_chromium_driver_download_url(position)
     name = get_chromium_driver_name_position(position)
@@ -105,17 +60,49 @@ def download_chromium_position(position):
         print("[-] No pre-built binary :(")
         return 1
 
-    os.system("unzip " + name)
-    os.system("mv chromedriver_linux64/chromedriver " + position)
-    os.system("rm -rf chromedriver_linux64 " + name)
+    os.system(f"unzip {name} &> /dev/null")
+    os.system(f"mv chromedriver_linux64/chromedriver {position} &> /dev/null")
+    os.system(f"rm -rf chromedriver_linux64 {name} &> /dev/null")
     
     return 0
 
+def get_commit_from_position(position):
+    URL = 'https://crrev.com/' + position
+    response = requests.get(URL)
+    if response.status_code == 404:
+        print(response.status_code)
+        return 0
+    else:
+        a = 66
+        b = 40
+        return str(response.text[a:a+1+b])
 
-def main(argv):
-    ret = download_chromium(argv[1])
-    return ret
+def download_chrome(tar, pos):
+    pos = str(pos)
+    cur = os.getcwd()
+    os.chdir(tar)
+
+    if not os.path.exists(pos): 
+        try:
+            commit = get_commit_from_position(pos)
+            if commit != 0:
+                print("downloading " + pos)
+                ret = download_chromium_position(pos)
+        except Exception as e:
+            print("exception", e)
+    else:
+        print("pass " + pos)
+
+    os.chdir(cur)
+
+
+def main():
+    tar = sys.argv[1]
+    pos = sys.argv[2]
+    download_chrome(tar, pos)
+    return 0
+
 
 if __name__ == "__main__":
-    ret = main(sys.argv)
+    ret = main()
     exit(ret)

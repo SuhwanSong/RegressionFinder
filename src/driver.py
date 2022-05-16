@@ -1,11 +1,14 @@
-from os.path import dirname, join, abspath, splitext
+from os.path import dirname, join, abspath, splitext, exists
 
 from pathlib import Path
 from helper import ImageDiff
+from helper import FileManager
 
 from jshelper import JSCODE
 from jshelper import INTEROP
 from selenium import webdriver
+
+from download_version import download_chrome
 
 class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
@@ -27,9 +30,13 @@ class Browser:
         else:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
 
-        parent_dir = dirname(dirname(abspath(__file__)))
-        browser_path = join(parent_dir, browser_type, str(commit_version), browser_type)
+        parent_dir = FileManager.get_parent_dir(__file__)
+        browser_dir = join(parent_dir, browser_type)
+        browser_path = join(browser_dir, str(commit_version), browser_type)
         self.options.binary_location = browser_path
+
+        if browser_type == 'chrome' and not exists(browser_path):
+            download_chrome(browser_dir, commit_version)
 
         for op in options: self.options.add_argument(op)
 
@@ -114,7 +121,8 @@ class Browser:
 
     def get_hash_from_html(self, html_file, save_shot: bool = False):
         if not self.run_html(html_file): return
-
+        
+        save_shot = True
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
 

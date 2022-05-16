@@ -3,7 +3,10 @@ from typing import Optional
 
 from helper import IOQueue
 from helper import ImageDiff
+from helper import FileManager
 from threading import Thread
+
+from bisect import bisect
 
 class CrossVersion(Thread):
     def __init__(self, helper: IOQueue) -> None:
@@ -53,6 +56,7 @@ class CrossVersion(Thread):
             hashes = self.__cross_version_test_html(html_file)
             if hashes and ImageDiff.diff_images(hashes[0], hashes[1]):
                 hpr.update_postq(vers, html_file, hashes)
+
         self.__stop_browsers()
 
 
@@ -108,21 +112,33 @@ class Bisecter(Thread):
         super().__init__()
         self.__helper = helper
         self.__ref_br = None
+        self.__version_list = [] 
 
     def __start_ref_browser(self, ver: int) -> bool:
         self.__stop_ref_browser()
         self.__ref_br = Browser('chrome', ver)
         return self.__ref_br.setup_browser()
 
-    def __stop_ref_browser(self):
+    def __stop_ref_browser(self) -> None:
         if self.__ref_br:
             self.__ref_br.kill_browser()
             self.__ref_br = None
+
+    def __set_version_list(self):
+        self.__version_list = FileManager.get_bisect_csv()
+
+    def __convert_to_ver(self, index: int) -> int:
+        return self.__version_list[index]
+
+    def __convert_to_index(self, ver: int) -> int:
+        return bisect(self.__version_list, ver) 
 
     def run(self) -> None:
 
         cur_mid = None
         hpr = self.__helper
+        self.__set_version_list()
+
         while True:
             vers = hpr.get_vers()
             if not vers: break
@@ -130,16 +146,19 @@ class Bisecter(Thread):
             start, end, ref = vers
             if start >= end: continue
 
+            start_idx = self.__convert_to_index(start)
+            end_idx = self.__convert_to_index(end)
+
             html_file, hashes = hpr.pop_from_queue()
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
-            # if adjacent (i.e., bisect done)
-            if end - start == 1:
+            if end_idx - start_idx == 1:
                 hpr.update_postq(vers, html_file, hashes)
                 continue
 
-            mid = (start + end) // 2
+            mid_idx = (start_idx + end_idx) // 2
+            mid = self.__convert_to_ver(mid_idx)
             if cur_mid != mid:
                 cur_mid = mid
                 if not self.__start_ref_browser(cur_mid):
@@ -149,13 +168,16 @@ class Bisecter(Thread):
             if not ref_hash: continue
 
             if hashes[0] == ref_hash:
-                new_vers = (mid, end, ref)
+                low = self.__convert_to_ver(mid_idx + 1)
+                high = end
+
             elif hashes[1] == ref_hash:
-                new_vers = (start, mid, ref)
+                low = start
+                high = self.__convert_to_ver(mid_idx - 1)
             else:
                 continue
 
-            hpr.insert_to_queue(new_vers, html_file, hashes)
+            hpr.insert_to_queue((low, high, ref), html_file, hashes)
 
         self.__stop_ref_browser()
 
@@ -183,5 +205,5 @@ class R2Z2:
     def process(self):
         self.test_wrapper(CrossVersion)
         self.test_wrapper(Oracle)
-#        self.test_wrapper(Bisecter)
+        #self.test_wrapper(Bisecter)
 

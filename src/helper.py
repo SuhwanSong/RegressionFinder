@@ -1,4 +1,5 @@
 import os
+from os.path import join, dirname, abspath
 
 from PIL import Image
 from io import BytesIO
@@ -19,11 +20,10 @@ class IOQueue:
         self.__lock = Lock()
         self.__preqs = defaultdict(Queue)
         self.__postqs = defaultdict(Queue)
+        self.__vers = None
 
         for testcase, vers in input_version_pair.items():
             self.insert_to_queue(vers, testcase, ())
-
-        self.__vers = self.__select_vers()
 
     def __select_vers(self) -> Optional[tuple[int, int, int]]:
         keys = list(self.__preqs.keys())
@@ -33,6 +33,8 @@ class IOQueue:
         self.__lock.acquire()
         value = [html_file, hashes]
         self.__preqs[vers].put(value)
+
+        if not self.__vers: self.__vers = self.__select_vers()
 
         self.__lock.release()
 
@@ -78,9 +80,25 @@ class FileManager:
             for name in files:
                 if ext is not None and ext not in name:
                     continue
-                paths.append((os.path.join(path, name)))
+                paths.append((join(path, name)))
         return paths
 
+    def get_bisect_csv():
+        csvfile = join(
+                dirname(dirname(abspath(__file__))),
+                'data', 
+                'bisect-builds-cache.csv')
+        tmp = []
+        with open(csvfile, 'r') as fp:
+            line = fp.readline()
+            vers = line.split(', ')
+            for ver in vers:
+                tmp.append(int(ver))
+        tmp.sort()
+        return tmp
+
+    def get_parent_dir(file):
+        return dirname(dirname(abspath(file)))
 
 class Generator:
     def __init__(self, num_of_inputs):
