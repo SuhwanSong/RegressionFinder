@@ -1,4 +1,4 @@
-import os
+from os import walk
 from os.path import join, dirname, abspath
 
 from PIL import Image
@@ -11,6 +11,7 @@ from queue import Queue
 from threading import Lock
 from collections import defaultdict
 
+import csv
 from typing import Optional
 
 
@@ -21,6 +22,9 @@ class IOQueue:
         self.__preqs = defaultdict(Queue)
         self.__postqs = defaultdict(Queue)
         self.__vers = None
+
+        self.__num_of_tests = 0
+        self.__num_of_outputs = 0
 
         for testcase, vers in input_version_pair.items():
             self.insert_to_queue(vers, testcase, ())
@@ -49,7 +53,10 @@ class IOQueue:
         if self.__preqs[vers].empty():
             self.__preqs.pop(vers)
             self.__vers = self.__select_vers()
-
+        
+        self.__num_of_tests += 1
+        if self.__num_of_tests % 100 == 0:
+            print (f'test: {self.__num_of_tests}, outputs: {self.__num_of_outputs}')
         self.__lock.release()
         return value
 
@@ -61,6 +68,7 @@ class IOQueue:
 
     def update_postq(self, vers: tuple[int, int, int], html_file: str, hashes: tuple) -> None:
         self.__lock.acquire()
+        self.__num_of_outputs += 1
         self.__postqs[vers].put((html_file, hashes))
         self.__lock.release()
 
@@ -70,13 +78,28 @@ class IOQueue:
         self.__preqs = self.__postqs.copy()
         self.__postqs.clear()
         self.__vers = self.__select_vers()
+        self.__num_of_tests = 0
+        self.__num_of_outputs = 0
         self.__lock.release()
+
+
+    def dump_queue(self, file):
+        header = ['base', 'target', 'ref', 'html file']
+        with open(file, 'w') as fp:
+            c = csv.writer(fp)
+            c.writerow(header)
+            for key, q in self.__postqs.items():
+                for value in list(q.queue):
+                    html_file, hashes = value
+                    base, target, ref = key
+                    c.writerow([str(base), str(target), str(ref), html_file])
+               
 
 
 class FileManager:
     def get_all_files(root, ext=None):
         paths = []
-        for path, subdirs, files in os.walk(root):
+        for path, subdirs, files in walk(root):
             for name in files:
                 if ext is not None and ext not in name:
                     continue
@@ -100,6 +123,15 @@ class FileManager:
     def get_parent_dir(file):
         return dirname(dirname(abspath(file)))
 
+    def write_file(name, content):
+        with open(name, 'w') as fp:
+            fp.write(content)
+
+    def read_file(name):
+        with open(name, 'r') as fp:
+            return fp.read()
+
+
 class Generator:
     def __init__(self, num_of_inputs):
         pass
@@ -114,5 +146,5 @@ class ImageDiff:
             return hash_v
 
     def diff_images(hash_A, hash_B):
-        THRE = 8 # 16
+        THRE = 4 # 16
         return hash_A - hash_B  > THRE
