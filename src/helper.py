@@ -89,12 +89,12 @@ class Generator:
 
 class ImageDiff:
     def get_phash(png):
-        HASHSIZE = 32
+        HASHSIZE = 16
         stream = png if isinstance(png, str) else BytesIO(png)
         with Image.open(stream, 'r') as image:
             hash_v = phash(image, hash_size = HASHSIZE)
             return hash_v
 
     def diff_images(hash_A, hash_B):
-        THRE = 64
+        THRE = 8 # 16
         return hash_A - hash_B  > THRE

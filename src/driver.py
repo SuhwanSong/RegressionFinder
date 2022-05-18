@@ -56,13 +56,15 @@ class Browser:
             return False
 
         WIDTH  = 1024
-        HEIGHT = 1024
+        HEIGHT = 500
         TIMEOUT = 10
 
         self.__set_viewport_size(WIDTH, HEIGHT)
         self.browser.set_script_timeout(TIMEOUT)
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
+
+        print (f'{self.__browser_type} {self.version} starts ...')
         return True
 
 

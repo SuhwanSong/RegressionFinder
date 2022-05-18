@@ -20,7 +20,7 @@ def main():
     seed(args.randomseed)
 
     if args.input:
-        inputs = FileManager.get_all_files(args.input)
+        inputs = FileManager.get_all_files(args.input, '.html')
     else:
         pass # TODO
 

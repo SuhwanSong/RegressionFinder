@@ -10,6 +10,7 @@ class CrossVersion(Thread):
         super().__init__()
         self.__helper = helper
         self.__br_list = []
+        print ('CrossVersion created...')
 
     def __start_browsers(self, vers: tuple[int, int, int]) -> bool:
         self.__stop_browsers()
@@ -60,6 +61,7 @@ class Oracle(Thread):
         super().__init__()
         self.__helper = helper
         self.__ref_br = None
+        print ('Oracle created...')
 
     def __start_ref_browser(self, ver: int) -> bool:
         self.__stop_ref_browser()
@@ -95,9 +97,8 @@ class Oracle(Thread):
                 raise ValueError('Something wrong in hashes...')
 
             ref_hash = self.__ref_br.get_hash_from_html(html_file)
-
             if ref_hash and self.__is_regression(hashes, ref_hash):
-                hpr.update_postq(key, html_file, hashes)
+                hpr.update_postq(vers, html_file, hashes)
 
         self.__stop_ref_browser()
 
@@ -182,6 +183,6 @@ class R2Z2:
 
     def process(self):
         self.test_wrapper(CrossVersion)
-#        self.test_wrapper(Oracle)
+        self.test_wrapper(Oracle)
 #        self.test_wrapper(Bisecter)
 
