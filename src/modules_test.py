@@ -3,6 +3,7 @@ import unittest
 from modules import CrossVersion
 from modules import Oracle
 from modules import Bisecter
+from modules import BisecterBuild
 
 from helper import IOQueue
 
@@ -51,6 +52,7 @@ class TestModules(unittest.TestCase):
         that generates the same results.
         """
         self.assertIsNone(ioq.pop_from_queue())
+
 
     def test_oracle(self):
 
@@ -117,6 +119,41 @@ class TestModules(unittest.TestCase):
             self.assertEqual(target_answer, vers[1])
 
 
+    def test_bisect_analysis_with_build(self):
+
+        # bug commit is 921604
+        base_commit_of_chrome = 921581
+        target_commit_of_chrome = 921617
+
+        base_answer  = 921581
+        target_answer = 921617
+
+        versions = (base_commit_of_chrome, 
+                    target_commit_of_chrome, 
+                    None)
+
+        input_version_pair = {
+                './testcases/bug_1270713_oracle.html': versions,
+        }
+
+        ioq = IOQueue(input_version_pair)
+        cv = CrossVersion(ioq)
+        cv.start()
+        cv.join()
+        ioq.move_to_preqs()
+
+        bi = BisecterBuild(ioq)
+        bi.start()
+        bi.join()
+        ioq.move_to_preqs()
+
+        vers = ioq.get_vers()
+        for inp in input_version_pair:
+            html_file, hashes = ioq.pop_from_queue()
+            self.assertEqual(html_file, inp)
+            self.assertNotEqual(hashes[0], hashes[1])
+            #self.assertEqual(base_answer, vers[0])
+            #self.assertEqual(target_answer, vers[1])
 
 
 class TestRespins(unittest.TestCase):
