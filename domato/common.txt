@@ -1,0 +1,275 @@
+#   Copyright 2017 Google Inc. All Rights Reserved.
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+
+<newline> = <cr><lf>
+
+<interestingint> = 32768
+<interestingint> = 65535
+<interestingint> = 65536
+<interestingint> = 1073741824
+<interestingint> = 536870912
+<interestingint> = 268435456
+<interestingint> = 4294967295
+<interestingint> = 2147483648
+<interestingint> = 2147483647
+<interestingint> = -2147483648
+<interestingint> = -1073741824
+<interestingint> = -32769
+
+<fuzzint> = 0
+<fuzzint> = 0
+<fuzzint> = 0
+<fuzzint> = 1
+<fuzzint> = 1
+<fuzzint> = -1
+<fuzzint> = <int min=0 max=10>
+<fuzzint> = <int min=0 max=100>
+<short p=0.05> = <interestingint>
+
+<boolean> = true
+<boolean> = false
+
+<percentage> = <int min=0 max=100>
+
+<elementid> = htmlvar0000<int min=1 max=9>
+<svgelementid> = svgvar0000<int min=1 max=9>
+<class> = class<int min=0 max=9>
+
+<color> = red
+<color> = green
+<color> = white
+<color> = black
+<color> = #<hex><hex><hex><hex><hex><hex>
+<color> = rgb(<int min=0 max=255>,<int min=0 max=255>,<int min=0 max=255>)
+
+<tagname> = a
+<tagname> = abbr
+<tagname> = acronym
+<tagname> = address
+<tagname> = applet
+<tagname> = area
+<tagname> = article
+<tagname> = aside
+<tagname> = b
+<tagname> = base
+<tagname> = basefont
+<tagname> = bdi
+<tagname> = bdo
+<tagname> = bgsound
+<tagname> = big
+<tagname> = blink
+<tagname> = blockquote
+<tagname> = body
+<tagname> = br
+<tagname> = button
+<tagname> = canvas
+<tagname> = caption
+<tagname> = center
+<tagname> = cite
+<tagname> = code
+<tagname> = col
+<tagname> = colgroup
+<tagname> = command
+<tagname> = content
+<tagname> = data
+<tagname> = datalist
+<tagname> = dd
+<tagname> = del
+<tagname> = details
+<tagname> = dfn
+<tagname> = dialog
+<tagname> = dir
+<tagname> = div
+<tagname> = dl
+<tagname> = dt
+<tagname> = element
+<tagname> = em
+<tagname> = embed
+<tagname> = fieldset
+<tagname> = figcaption
+<tagname> = figure
+<tagname> = font
+<tagname> = footer
+<tagname> = form
+<tagname> = frame
+<tagname> = frameset
+<tagname> = h1
+<tagname> = h2
+<tagname> = h3
+<tagname> = h4
+<tagname> = h5
+<tagname> = h6
+<tagname> = head
+<tagname> = header
+<tagname> = hgroup
+<tagname> = hr
+<tagname> = html
+<tagname> = i
+<tagname> = iframe
+<tagname> = image
+<tagname> = img
+<tagname> = input
+<tagname> = ins
+<tagname> = isindex
+<tagname> = kbd
+<tagname> = keygen
+<tagname> = label
+<tagname> = layer
+<tagname> = legend
+<tagname> = li
+<tagname> = link
+<tagname> = listing
+<tagname> = main
+<tagname> = map
+<tagname> = mark
+<tagname> = menu
+<tagname> = menuitem
+<tagname> = meta
+<tagname> = meter
+<tagname> = multicol
+<tagname> = nav
+<tagname> = nobr
+<tagname> = noembed
+<tagname> = noframes
+<tagname> = nolayer
+<tagname> = noscript
+<tagname> = object
+<tagname> = ol
+<tagname> = optgroup
+<tagname> = option
+<tagname> = output
+<tagname> = p
+<tagname> = param
+<tagname> = picture
+<tagname> = plaintext
+<tagname> = pre
+<tagname> = q
+<tagname> = rp
+<tagname> = rt
+<tagname> = rtc
+<tagname> = ruby
+<tagname> = s
+<tagname> = samp
+<tagname> = script
+<tagname> = section
+<tagname> = select
+<tagname> = shadow
+<tagname> = small
+<tagname> = source
+<tagname> = spacer
+<tagname> = span
+<tagname> = strike
+<tagname> = strong
+<tagname> = style
+<tagname> = sub
+<tagname> = summary
+<tagname> = sup
+<tagname> = table
+<tagname> = tbody
+<tagname> = td
+<tagname> = template
+<tagname> = textarea
+<tagname> = tfoot
+<tagname> = th
+<tagname> = thead
+<tagname> = time
+<tagname> = title
+<tagname> = tr
+<tagname> = track
+<tagname> = tt
+<tagname> = u
+<tagname> = ul
+<tagname> = var
+<tagname> = wbr
+<tagname> = xmp
+
+<svgtagname> = a
+<svgtagname> = altGlyph
+<svgtagname> = altGlyphDef
+<svgtagname> = altGlyphItem
+<svgtagname> = circle
+<svgtagname> = clipPath
+<svgtagname> = cursor
+<svgtagname> = defs
+<svgtagname> = desc
+<svgtagname> = ellipse
+<svgtagname> = feBlend
+<svgtagname> = feColorMatrix
+<svgtagname> = feComponentTransfer
+<svgtagname> = feComposite
+<svgtagname> = feConvolveMatrix
+<svgtagname> = feDiffuseLighting
+<svgtagname> = feDisplacementMap
+<svgtagname> = feDistantLight
+<svgtagname> = feDropShadow
+<svgtagname> = feFlood
+<svgtagname> = feFuncA
+<svgtagname> = feFuncB
+<svgtagname> = feFuncG
+<svgtagname> = feFuncR
+<svgtagname> = feGaussianBlur
+<svgtagname> = feImage
+<svgtagname> = feMerge
+<svgtagname> = feMergeNode
+<svgtagname> = feMorphology
+<svgtagname> = feOffset
+<svgtagname> = fePointLight
+<svgtagname> = feSpecularLighting
+<svgtagname> = feSpotLight
+<svgtagname> = feTile
+<svgtagname> = feTurbulence
+<svgtagname> = filter
+<svgtagname> = font
+<svgtagname> = font_face
+<svgtagname> = font_face_format
+<svgtagname> = font_face_name
+<svgtagname> = font_face_src
+<svgtagname> = font_face_uri
+<svgtagname> = foreignObject
+<svgtagname> = g
+<svgtagname> = glyph
+<svgtagname> = glyphRef
+<svgtagname> = hkern
+<svgtagname> = image
+<svgtagname> = line
+<svgtagname> = linearGradient
+<svgtagname> = marker
+<svgtagname> = mask
+<svgtagname> = metadata
+<svgtagname> = missing_glyph
+<svgtagname> = mpath
+<svgtagname> = path
+<svgtagname> = pattern
+<svgtagname> = polygon
+<svgtagname> = polyline
+<svgtagname> = radialGradient
+<svgtagname> = rect
+<svgtagname> = script
+<svgtagname> = set
+<svgtagname> = stop
+<svgtagname> = style
+<svgtagname> = svg
+<svgtagname> = switch
+<svgtagname> = symbol
+<svgtagname> = text
+<svgtagname> = textPath
+<svgtagname> = title
+<svgtagname> = tref
+<svgtagname> = tspan
+<svgtagname> = use
+<svgtagname> = view
+<svgtagname> = vkern
+
+<imgsrc> = x
+<imgsrc> = data:image/gif;base64,R0lGODlhIAAgAPIBAGbMzP///wAAADOZZpn/zAAAAAAAAAAAACH5BAAAAAAALAAAAAAgACAAAAOLGLrc/k7ISau9S5DNu/8fICgaYJ5oqqbDGJRrLAMtScw468J5Xr+3nm8XFM5+PGMMWYwxcMyZ40iULQaDhSzqDGBNisGyuhUDrmNb72pWcaXhtpsM/27pVi8UX96rcQpDf3V+QD12d4NKK2+Lc4qOKI2RJ5OUNHyXSDRYnZ6foKAuLxelphMQqaoPCQA7
