@@ -81,7 +81,6 @@ def download_chrome(tar, pos):
     pos = str(pos)
     cur = os.getcwd()
     os.chdir(tar)
-
     if not os.path.exists(pos): 
         try:
             commit = get_commit_from_position(pos)

@@ -14,7 +14,7 @@ from collections import defaultdict
 
 from typing import Optional
 from shutil import copyfile 
-from download_version import download_chrome
+from chrome_binary import download_chrome
 
 class IOQueue:
     def __init__(self, input_version_pair: dict[str, tuple[int, int, int]]) -> None:
@@ -33,7 +33,7 @@ class IOQueue:
             self.num_of_inputs += 1
             self.insert_to_queue(vers, testcase, ())
 
-    def get_chrome(self, commit_version: int) -> None:
+    def download_chrome(self, commit_version: int) -> None:
         browser_type = 'chrome'
         self.__build_lock.acquire()
         parent_dir = FileManager.get_parent_dir(__file__)
@@ -42,6 +42,19 @@ class IOQueue:
         if not exists(browser_path):
             download_chrome(browser_dir, commit_version)
         self.__build_lock.release()
+
+    def build_chrome(self, commit_version: int) -> None:
+        browser_type = 'chrome'
+        self.__build_lock.acquire()
+        parent_dir = FileManager.get_parent_dir(__file__)
+        browser_dir = join(parent_dir, browser_type)
+        browser_path = join(browser_dir, str(commit_version), browser_type)
+        if not exists(browser_path):
+            #download_chrome(browser_dir, commit_version)
+            #TODO
+            pass
+        self.__build_lock.release()
+
 
     def __select_vers(self) -> Optional[tuple[int, int, int]]:
         keys = list(self.__preqs.keys())

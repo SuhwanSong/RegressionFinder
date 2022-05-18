@@ -64,8 +64,8 @@ class CrossVersion(Thread):
             if cur_vers != vers:
                 cur_vers = vers
 
-                hpr.get_chrome(cur_vers[0])
-                hpr.get_chrome(cur_vers[1])
+                hpr.download_chrome(cur_vers[0])
+                hpr.download_chrome(cur_vers[1])
                 if not self.start_browsers(cur_vers):
                     continue
             html_file, _ = hpr.pop_from_queue()
@@ -150,6 +150,9 @@ class Bisecter(Thread):
     def __convert_to_index(self, ver: int) -> int:
         return bisect(self.__version_list, ver) 
 
+    def __get_chrome(self, ver: int) -> None:
+        self.helper.download_chrome(ver)
+
     def run(self) -> None:
 
         cur_mid = None
@@ -178,7 +181,7 @@ class Bisecter(Thread):
             mid = self.__convert_to_ver(mid_idx)
             if cur_mid != mid:
                 cur_mid = mid
-                hpr.get_chrome(cur_mid)
+                self.__get_chrome(cur_mid)
                 if not self.__start_ref_browser(cur_mid):
                     continue
 
@@ -199,6 +202,22 @@ class Bisecter(Thread):
 
         self.__stop_ref_browser()
 
+
+class BisecterBuild(Bisecter):
+    def __init__(self, helper: IOQueue) -> None:
+        Bisecter.__init__(self, helper)
+
+    def __set_version_list(self) -> None:
+        pass
+
+    def __conver_to_ver(self, index: int) -> int:
+        return index
+
+    def __convert_to_index(self, ver: int) -> int:
+        return ver
+
+    def __get_chrome(self, ver: int) -> None:
+        self.helper.build_chrome(ver)
 
 class Minimizer(CrossVersion):
     def __init__(self, helper: IOQueue) -> None:
