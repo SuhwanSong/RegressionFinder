@@ -84,12 +84,12 @@ class Oracle(Thread):
         self.__ref_br = None
         print ('Oracle created...')
 
-    def __start_ref_browser(self, ver: int) -> bool:
-        self.__stop_ref_browser()
+    def start_ref_browser(self, ver: int) -> bool:
+        self.stop_ref_browser()
         self.__ref_br = Browser('firefox', ver)
         return self.__ref_br.setup_browser()
 
-    def __stop_ref_browser(self):
+    def stop_ref_browser(self):
         if self.__ref_br:
             self.__ref_br.kill_browser()
             self.__ref_br = None
@@ -110,7 +110,7 @@ class Oracle(Thread):
             refv = vers[-1]
             if cur_refv != refv:
                 cur_refv = refv
-                if not self.__start_ref_browser(cur_refv):
+                if not self.start_ref_browser(cur_refv):
                     continue
 
             html_file, hashes = hpr.pop_from_queue()
@@ -121,7 +121,7 @@ class Oracle(Thread):
             if ref_hash and self.__is_regression(hashes, ref_hash):
                 hpr.update_postq(vers, html_file, hashes)
 
-        self.__stop_ref_browser()
+        self.stop_ref_browser()
 
 
 class Bisecter(Thread):
@@ -131,33 +131,32 @@ class Bisecter(Thread):
         self.__ref_br = None
         self.__version_list = [] 
 
-    def __start_ref_browser(self, ver: int) -> bool:
-        self.__stop_ref_browser()
+    def start_ref_browser(self, ver: int) -> bool:
+        self.stop_ref_browser()
         self.__ref_br = Browser('chrome', ver)
         return self.__ref_br.setup_browser()
 
-    def __stop_ref_browser(self) -> None:
+    def stop_ref_browser(self) -> None:
         if self.__ref_br:
             self.__ref_br.kill_browser()
             self.__ref_br = None
 
-    def __set_version_list(self):
+    def set_version_list(self) -> None:
         self.__version_list = FileManager.get_bisect_csv()
 
-    def __convert_to_ver(self, index: int) -> int:
+    def convert_to_ver(self, index: int) -> int:
         return self.__version_list[index]
 
-    def __convert_to_index(self, ver: int) -> int:
+    def convert_to_index(self, ver: int) -> int:
         return bisect(self.__version_list, ver) 
 
-    def __get_chrome(self, ver: int) -> None:
+    def get_chrome(self, ver: int) -> None:
         self.helper.download_chrome(ver)
 
     def run(self) -> None:
-
         cur_mid = None
         hpr = self.helper
-        self.__set_version_list()
+        self.set_version_list()
 
         while True:
             vers = hpr.get_vers()
@@ -166,8 +165,8 @@ class Bisecter(Thread):
             start, end, ref = vers
             if start >= end: continue
 
-            start_idx = self.__convert_to_index(start)
-            end_idx = self.__convert_to_index(end)
+            start_idx = self.convert_to_index(start)
+            end_idx = self.convert_to_index(end)
 
             html_file, hashes = hpr.pop_from_queue()
             if len(hashes) != 2:
@@ -178,46 +177,47 @@ class Bisecter(Thread):
                 continue
 
             mid_idx = (start_idx + end_idx) // 2
-            mid = self.__convert_to_ver(mid_idx)
+            mid = self.convert_to_ver(mid_idx)
             if cur_mid != mid:
                 cur_mid = mid
-                self.__get_chrome(cur_mid)
-                if not self.__start_ref_browser(cur_mid):
+                self.get_chrome(cur_mid)
+                if not self.start_ref_browser(cur_mid):
                     continue
 
             ref_hash = self.__ref_br.get_hash_from_html(html_file)
             if not ref_hash: continue
 
             if hashes[0] == ref_hash:
-                low = self.__convert_to_ver(mid_idx + 1)
+                low = self.convert_to_ver(mid_idx + 1)
                 high = end
 
             elif hashes[1] == ref_hash:
                 low = start
-                high = self.__convert_to_ver(mid_idx - 1)
+                high = self.convert_to_ver(mid_idx - 1)
             else:
                 continue
 
             hpr.insert_to_queue((low, high, ref), html_file, hashes)
 
-        self.__stop_ref_browser()
+        self.stop_ref_browser()
 
 
 class BisecterBuild(Bisecter):
     def __init__(self, helper: IOQueue) -> None:
-        Bisecter.__init__(self, helper)
+        super().__init__(helper)
 
-    def __set_version_list(self) -> None:
-        pass
+    def set_version_list(self) -> None:
+        print ('skip this function')
 
-    def __conver_to_ver(self, index: int) -> int:
+    def convert_to_ver(self, index: int) -> int:
         return index
 
-    def __convert_to_index(self, ver: int) -> int:
+    def convert_to_index(self, ver: int) -> int:
         return ver
 
-    def __get_chrome(self, ver: int) -> None:
+    def get_chrome(self, ver: int) -> None:
         self.helper.build_chrome(ver)
+
 
 class Minimizer(CrossVersion):
     def __init__(self, helper: IOQueue) -> None:
@@ -403,7 +403,9 @@ class R2Z2:
         self.__num_of_threads = num_of_threads
 
     def test_wrapper(self, test_class: object):
-        num_of_threads = min(self.__num_of_threads, self.__ioq.num_of_inputs // 2 + 1)
+        num_of_threads = min(
+                self.__num_of_threads, 
+                (self.__ioq.num_of_inputs - 1) // 2 + 1)
         
         threads = []
         for i in range(num_of_threads):
@@ -428,4 +430,5 @@ class R2Z2:
         self.test_wrapper(Minimizer)
         self.test_wrapper(Oracle)
         self.test_wrapper(Bisecter)
+        self.test_wrapper(BisecterBuild)
 

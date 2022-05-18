@@ -2,6 +2,8 @@ import requests
 import os
 import sys
 
+from bs4 import BeautifulSoup
+
 def get_chromium_binary_download_url(position):
     url = f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{position}%2Fchrome-linux.zip?alt=media"
     return url
@@ -73,11 +75,12 @@ def get_commit_from_position(position):
         print(response.status_code)
         return 0
     else:
-        a = 66
-        b = 40
-        return str(response.text[a:a+1+b])
+        soup = BeautifulSoup(response.text)
+        title = soup.title.string.split(' - ')[0]
+        print (title)
+        return title
 
-def download_chrome(tar, pos):
+def download_chrome_binary(tar, pos):
     pos = str(pos)
     cur = os.getcwd()
     os.chdir(tar)
@@ -93,6 +96,24 @@ def download_chrome(tar, pos):
         print("pass " + pos)
 
     os.chdir(cur)
+
+def build_chrome_binary(pos):
+    pos = str(pos)
+    if not os.path.exists(pos): 
+        try:
+            commit = get_commit_from_position(pos)
+            cur_path = os.path.dirname(os.path.abspath(__file__))
+            br_build = os.path.join(cur_path, 'build_chrome.sh')
+
+            if commit != 0:
+                command = f'{br_build} {commit} {pos}'
+                print (command)
+                ret = os.system(command)
+        except Exception as e:
+            print("exception", e)
+    else:
+        print("pass " + pos)
+
 
 
 def main():
