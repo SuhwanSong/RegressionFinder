@@ -1,3 +1,6 @@
+import os
+import re
+
 from driver import Browser
 from typing import Optional
 
@@ -8,10 +11,10 @@ from threading import Thread
 
 from bisect import bisect
 
-from shutil import copyfile 
-import os
-import re
+from pathlib import Path
+from shutil import copyfile
 from bs4 import BeautifulSoup
+
 
 class CrossVersion(Thread):
     def __init__(self, helper: IOQueue) -> None:
@@ -60,6 +63,9 @@ class CrossVersion(Thread):
 
             if cur_vers != vers:
                 cur_vers = vers
+
+                hpr.get_chrome(cur_vers[0])
+                hpr.get_chrome(cur_vers[1])
                 if not self.start_browsers(cur_vers):
                     continue
             html_file, _ = hpr.pop_from_queue()
@@ -69,8 +75,6 @@ class CrossVersion(Thread):
                 hpr.update_postq(vers, html_file, hashes)
 
         self.stop_browsers()
-
-
 
 
 class Oracle(Thread):
@@ -174,6 +178,7 @@ class Bisecter(Thread):
             mid = self.__convert_to_ver(mid_idx)
             if cur_mid != mid:
                 cur_mid = mid
+                hpr.get_chrome(cur_mid)
                 if not self.__start_ref_browser(cur_mid):
                     continue
 
@@ -362,13 +367,15 @@ class Minimizer(CrossVersion):
 
                 hashes = self.cross_version_test_html(self.__temp_file)
                 #print ('after', hashes[0] - hashes[1])
+                min_html_file = os.path.splitext(html_file)[0] + '-min.html'
+                copyfile(self.__temp_file, min_html_file)
                 if self.is_bug(hashes):
-                    hpr.update_postq(vers, html_file, hashes)
+                    hpr.update_postq(vers, min_html_file, hashes)
 
             self.__remove_temp_files()
 
-
         self.stop_browsers()
+
 
 class R2Z2:
     def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int):
@@ -377,9 +384,13 @@ class R2Z2:
         self.__num_of_threads = num_of_threads
 
     def test_wrapper(self, test_class: object):
+        num_of_threads = min(self.__num_of_threads, self.__ioq.num_of_inputs // 2 + 1)
+        
         threads = []
-        for i in range(self.__num_of_threads):
+        for i in range(num_of_threads):
             threads.append(test_class(self.__ioq))
+
+        class_name = type(threads[-1]).__name__
 
         for th in threads:
             th.start()
@@ -387,7 +398,10 @@ class R2Z2:
         for th in threads:
             th.join()
 
-        self.__ioq.dump_queue(os.path.join(self.__out_dir, 'result.csv'))
+        dir_path = os.path.join(self.__out_dir, class_name)
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+        self.__ioq.dump_queue(dir_path)
+        self.__ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
         self.__ioq.move_to_preqs()
 
     def process(self):

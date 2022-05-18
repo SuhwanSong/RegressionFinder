@@ -1,4 +1,4 @@
-from os.path import dirname, join, abspath, splitext, exists
+from os.path import dirname, join, abspath, splitext
 
 from pathlib import Path
 from helper import ImageDiff
@@ -8,7 +8,6 @@ from jshelper import JSCODE
 from jshelper import INTEROP
 from selenium import webdriver
 
-from download_version import download_chrome
 
 class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
@@ -34,9 +33,6 @@ class Browser:
         browser_dir = join(parent_dir, browser_type)
         browser_path = join(browser_dir, str(commit_version), browser_type)
         self.options.binary_location = browser_path
-
-        if browser_type == 'chrome' and not exists(browser_path):
-            download_chrome(browser_dir, commit_version)
 
         for op in options: self.options.add_argument(op)
 
