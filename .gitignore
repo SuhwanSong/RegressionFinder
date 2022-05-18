@@ -133,3 +133,8 @@ dmypy.json
 chrome/
 firefox/
 testenv/
+*.png
+
+
+bisect-builds-cache.csv
+tools/

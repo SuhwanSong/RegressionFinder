@@ -54,4 +54,4 @@ pushd $DAT_DIR
 python3 bisect-builds.py -a linux64 --use-local-cache
 popd
 
-#build_chromium
+build_chromium

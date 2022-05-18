@@ -28,7 +28,12 @@ def main():
     output_dir = args.output
     num_of_threads = args.job
 
-    R2Z2(vers, inputs, output_dir, num_of_threads).process()
+    input_version_pair = {}
+
+    for inp in inputs:
+        input_version_pair[inp] = vers
+
+    R2Z2(input_version_pair, output_dir, num_of_threads).process()
 
 if __name__ == "__main__":
     main()
