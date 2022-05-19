@@ -63,6 +63,10 @@ class CrossVersion(Thread):
             vers = hpr.get_vers()
             if not vers: break
 
+            result = hpr.pop_from_queue()
+            if not result: break
+            html_file, _ = result
+
             if cur_vers != vers:
                 cur_vers = vers
 
@@ -71,9 +75,6 @@ class CrossVersion(Thread):
                 if not self.start_browsers(cur_vers):
                     continue
 
-            result = hpr.pop_from_queue()
-            if not result: break
-            html_file, _ = result
 
             hashes = self.cross_version_test_html(html_file)
             if self.is_bug(hashes):
@@ -112,17 +113,17 @@ class Oracle(Thread):
             vers = hpr.get_vers()
             if not vers: break
 
-            refv = vers[-1]
-            if cur_refv != refv:
-                cur_refv = refv
-                if not self.start_ref_browser(cur_refv):
-                    continue
-
             result = hpr.pop_from_queue()
             if not result: break
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
+
+            refv = vers[-1]
+            if cur_refv != refv:
+                cur_refv = refv
+                if not self.start_ref_browser(cur_refv):
+                    continue
 
             ref_hash = self.__ref_br.get_hash_from_html(html_file)
             if ref_hash and self.__is_regression(hashes, ref_hash):
@@ -169,17 +170,18 @@ class Bisecter(Thread):
             vers = hpr.get_vers()
             if not vers: break
 
-            start, end, ref = vers
-            if start >= end: continue
-
-            start_idx = self.convert_to_index(start)
-            end_idx = self.convert_to_index(end)
-
             result = hpr.pop_from_queue()
             if not result: break
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
+
+
+            start, end, ref = vers
+            if start >= end: continue
+
+            start_idx = self.convert_to_index(start)
+            end_idx = self.convert_to_index(end)
 
             if end_idx - start_idx == 1:
                 hpr.update_postq(vers, html_file, hashes)
@@ -353,6 +355,7 @@ class Minimizer(CrossVersion):
             br.exec_script(f'document.body.querySelectorAll(\'*\')[{i}].remove();')
 
             text = br.get_source()
+            if not text: continue
             FileManager.write_file(self.__trim_file, text)
             hashes = self.cross_version_test_html(self.__trim_file) 
             if self.is_bug(hashes):
@@ -386,14 +389,15 @@ class Minimizer(CrossVersion):
             vers = hpr.get_vers()
             if not vers: break
 
+            result = hpr.pop_from_queue()
+            if not result: break
+            html_file, _ = result
+
             if cur_vers != vers:
                 cur_vers = vers
                 if not self.start_browsers(cur_vers):
                     continue
 
-            result = hpr.pop_from_queue()
-            if not result: break
-            html_file, _ = result
 
             if self.__initial_test(html_file):
                 self.__minimizing()
