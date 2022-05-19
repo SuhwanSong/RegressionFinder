@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html>
+<style>
+* { font: 10px/10px Ahem; }
+</style>
 <script>
   var ahem = new Uint8Array([
     0x00, 0x01, 0x00, 0x00, 0x00, 0x0b, 0x00, 0x80, 0x00, 0x03, 0x00, 0x30, 0x4f, 0x53, 0x2f, 0x32,
@@ -787,37 +790,12 @@
   var font = new FontFace('Ahem', ahem.buffer);
   document.fonts.add(font);
   font.load();
-
-function set_font() {
-  var css = '* { font: 10px/10px Ahem; }',
-    head = document.head,
-    style = document.createElement('style');
-
-  head.appendChild(style);
-
-  style.type = 'text/css';
-  if (style.styleSheet){
-    style.styleSheet.cssText = css;
-  } else {
-    style.appendChild(document.createTextNode(css));
-  }
-}
-
-function get_all_attrnames() {
-    let attrs = [];
-    const elements = document.body.querySelectorAll('*');
-    for (var i = 0; i < elements.length; i++) {
-        attrs.push(elements[i].getAttributeNames());
-    }
-    return attrs;
-}
 </script>
 <body>
 
   <div style="position:absolute; top:0; left:0; right:0; bottom:0; overflow:hidden;">
     <div id="moveme" style="position:absolute; transform-origin: 0px 0px; transform: matrix(0.365844, 0, 0, 0.365844, 135.926, 13);">
       <svg width="2383.94" height="1683.78" style="position:absolute; left:0; top:0;">
-        <circle cx="475" cy="975" r="40" stroke="black" stroke-width="2" fill="none" />
         <text id="txt" style="font-size: 40px;" transform="matrix(1,0.0,-0.0,1,468,988)">A</text>
       </svg>
     </div>
