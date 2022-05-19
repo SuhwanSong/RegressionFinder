@@ -23,7 +23,6 @@ class CrossVersion(Thread):
         super().__init__()
         self.helper = helper
         self.__br_list = []
-        print ('CrossVersion created...')
 
     def get_newer_browser(self) -> Browser:
         return self.__br_list[-1] if self.__br_list else None
@@ -88,7 +87,6 @@ class Oracle(Thread):
         super().__init__()
         self.helper = helper
         self.__ref_br = None
-        print ('Oracle created...')
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
@@ -218,7 +216,7 @@ class BisecterBuild(Bisecter):
         super().__init__(helper)
 
     def set_version_list(self) -> None:
-        print ('skip this function')
+        pass
 
     def convert_to_ver(self, index: int) -> int:
         return index
@@ -257,7 +255,6 @@ class Minimizer(CrossVersion):
 
         self.__min_html = FileManager.read_file(html_file)
         hashes = self.cross_version_test_html(html_file) 
-        #print ('before', hashes[0] - hashes[1])
         return self.is_bug(hashes)
 
 
@@ -269,8 +266,8 @@ class Minimizer(CrossVersion):
         style_line = re.sub('; ', '; \n', style_line)
         style_blocks = style_line.split('\n')
 
-        print('> Minimizing style idx: {} ...'.format(idx))
-        print('> Initial style entries: {}'.format(len(style_blocks)))
+        #print('> Minimizing style idx: {} ...'.format(idx))
+        #print('> Initial style entries: {}'.format(len(style_blocks)))
 
         min_blocks = style_blocks
         min_indices = range(len(style_blocks))
@@ -278,11 +275,11 @@ class Minimizer(CrossVersion):
         trim_sizes = [ pow(2,i) for i in range(3,-1,-1) ] # 8, 4, 2, 1
         trim_sizes = [x for x in trim_sizes if x < len(style_blocks)]
         for trim_size in trim_sizes:
-            print('> Setting trim size: {}'.format(trim_size))
+            #print('> Setting trim size: {}'.format(trim_size))
             for offset in range(1, len(style_blocks) - 2, trim_size):
                 if offset not in min_indices:
                     continue
-                print('> Current style entries: {}'.format(len(min_blocks)))
+                #print('> Current style entries: {}'.format(len(min_blocks)))
 
                 trim_indices = range(offset, min(offset + trim_size, len(style_blocks) - 2))
 
@@ -339,7 +336,7 @@ class Minimizer(CrossVersion):
 
                 self.__min_html = [ line + '\n' for line in self.__cat_html.split('\n') ]
             except:
-                print ('style is ', soup.style)
+                #print ('style is ', soup.style)
                 return
         else:
             return True
@@ -359,7 +356,7 @@ class Minimizer(CrossVersion):
             FileManager.write_file(self.__trim_file, text)
             hashes = self.cross_version_test_html(self.__trim_file) 
             if self.is_bug(hashes):
-                print (f'{i}th element is removed')
+                #print (f'{i}th element is removed')
                 self.__min_html = text
                 FileManager.write_file(self.__temp_file, self.__min_html)
             else:
@@ -372,7 +369,7 @@ class Minimizer(CrossVersion):
                     FileManager.write_file(self.__trim_file, text)
                     hashes = self.cross_version_test_html(self.__trim_file) 
                     if self.is_bug(hashes):
-                        print (f'{attr} attr is removed')
+                        #print (f'{attr} attr is removed')
                         self.__min_html = text
                         FileManager.write_file(self.__temp_file, self.__min_html)
 
@@ -426,6 +423,7 @@ class R2Z2:
             threads.append(test_class(self.__ioq))
 
         class_name = type(threads[-1]).__name__
+        print (f'{class_name} stage starts...')
 
         for th in threads:
             th.start()

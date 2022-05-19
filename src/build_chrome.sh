@@ -23,13 +23,12 @@ echo $PWD
 #gclient sync -D --force --reset
 gclient sync -D 
 ./build/install-build-deps.sh
-
+sudo apt-get install python -y 
 gclient runhooks
 
 gn gen out/Release
-cp $CUR_DIR/build/args.gn out/Release
-
-gn gen out/Release
+#cp $CUR_DIR/build/args.gn out/Release
+#gn gen out/Release
 autoninja -C out/Release chrome
 
 rm -rf out/$GIT_VER
