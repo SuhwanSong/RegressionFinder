@@ -28,6 +28,8 @@ try:
 except:
     from domato.grammar import Grammar
 
+from multiprocessing import Process
+
 _N_MAIN_LINES = 10
 _N_EVENTHANDLER_LINES = 1
 
@@ -361,19 +363,6 @@ def generate_new_sample(template, htmlgrammar, cssgrammar, jsgrammar):
     result = result.replace('<cssfuzzer>', css)
     result = result.replace('<htmlfuzzer>', html)
 
-    handlers = False
-#    while '<jsfuzzer>' in result:
-#        numlines = _N_MAIN_LINES
-#        if handlers:
-#            numlines = _N_EVENTHANDLER_LINES
-#        else:
-#            handlers = True
-#        result = result.replace(
-#            '<jsfuzzer>',
-#            generate_function_body(jsgrammar, htmlctx, numlines),
-#            1
-#        )
-
     return result
 
 
@@ -489,7 +478,7 @@ def get_option(option_name):
     return None
 
 
-def main():
+def main(index):
     fuzzer_dir = os.path.dirname(__file__)
 
     multiple_samples = False
@@ -511,9 +500,12 @@ def main():
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
 
+        out_dir = os.path.join(out_dir, str(index))
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
         outfiles = []
         for i in range(nsamples):
-            outfiles.append(os.path.join(out_dir, 'fuzz-' + str(i).zfill(6) + '.html'))
+            outfiles.append(os.path.join(out_dir, 'fuzz-' + str(i).zfill(7) + '.html'))
 
         generate_samples(fuzzer_dir, outfiles)
         
@@ -530,4 +522,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    ps = []
+    for i in range(50):
+        p = Process(target=main, args=(i,))
+        p.start()
+
+        ps.append(p)
+    for p in ps:
+        p.join()
