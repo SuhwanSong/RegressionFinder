@@ -17,6 +17,9 @@ from shutil import copyfile
 from chrome_binary import build_chrome_binary
 from chrome_binary import download_chrome_binary
 
+from domato.grammar import Grammar
+from domato.generator import generate_new_sample 
+
 class IOQueue:
     def __init__(self, input_version_pair: dict[str, tuple[int, int, int]]) -> None:
 
@@ -177,8 +180,31 @@ class FileManager:
 
 
 class Generator:
-    def __init__(self, num_of_inputs):
-        pass
+    def __init__(self):
+        domato_dir = join(dirname(abspath(__file__)), 'domato')
+        f = open(os.path.join(domato_dir, 'template.html'))
+        self.template = f.read()
+        f.close()
+        htmlgrammar = Grammar()
+        err = htmlgrammar.parse_from_file(os.path.join(domato_dir, 'html.txt'))
+        if err > 0:
+            print('There were errors parsing grammar')
+            return
+        cssgrammar = Grammar()
+        err = cssgrammar.parse_from_file(os.path.join(domato_dir, 'css.txt'))
+        if err > 0:
+            print('There were errors parsing grammar')
+            return
+        htmlgrammar.add_import('cssgrammar', cssgrammar)
+        self.htmlgrammar = htmlgrammar
+        self.cssgrammar = cssgrammar
+
+    def generate_html(self):
+        return generate_new_sample(
+                self.template, 
+                self.htmlgrammar, 
+                self.cssgrammar, 
+                None)
 
 
 class ImageDiff:

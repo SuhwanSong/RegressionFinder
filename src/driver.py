@@ -5,7 +5,6 @@ from helper import ImageDiff
 from helper import FileManager
 
 from jshelper import JSCODE
-from jshelper import INTEROP
 from selenium import webdriver
 
 
@@ -112,6 +111,7 @@ class Browser:
             self.kill_browser()
             self.setup_browser()
             return False
+        self.exec_script(JSCODE)
         self.exec_script('trigger();')
         self.__num_of_run += 1
         return True

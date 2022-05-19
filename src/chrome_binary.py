@@ -106,7 +106,7 @@ def build_chrome_binary(pos):
             br_build = os.path.join(cur_path, 'build_chrome.sh')
 
             if commit != 0:
-                command = f'{br_build} {commit} {pos}'
+                command = f'sudo {br_build} {commit} {pos}'
                 print (command)
                 ret = os.system(command)
         except Exception as e:

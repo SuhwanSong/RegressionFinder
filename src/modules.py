@@ -68,7 +68,10 @@ class CrossVersion(Thread):
                 hpr.download_chrome(cur_vers[1])
                 if not self.start_browsers(cur_vers):
                     continue
-            html_file, _ = hpr.pop_from_queue()
+
+            result = hpr.pop_from_queue()
+            if not result: break
+            html_file, _ = result
 
             hashes = self.cross_version_test_html(html_file)
             if self.is_bug(hashes):
@@ -113,7 +116,9 @@ class Oracle(Thread):
                 if not self.start_ref_browser(cur_refv):
                     continue
 
-            html_file, hashes = hpr.pop_from_queue()
+            result = hpr.pop_from_queue()
+            if not result: break
+            html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
@@ -168,7 +173,9 @@ class Bisecter(Thread):
             start_idx = self.convert_to_index(start)
             end_idx = self.convert_to_index(end)
 
-            html_file, hashes = hpr.pop_from_queue()
+            result = hpr.pop_from_queue()
+            if not result: break
+            html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
@@ -379,7 +386,10 @@ class Minimizer(CrossVersion):
                 cur_vers = vers
                 if not self.start_browsers(cur_vers):
                     continue
-            html_file, _ = hpr.pop_from_queue()
+
+            result = hpr.pop_from_queue()
+            if not result: break
+            html_file, _ = result
 
             if self.__initial_test(html_file):
                 self.__minimizing()
@@ -403,12 +413,8 @@ class R2Z2:
         self.__num_of_threads = num_of_threads
 
     def test_wrapper(self, test_class: object):
-        num_of_threads = min(
-                self.__num_of_threads, 
-                (self.__ioq.num_of_inputs - 1) // 2 + 1)
-        
         threads = []
-        for i in range(num_of_threads):
+        for i in range(self.__num_of_threads):
             threads.append(test_class(self.__ioq))
 
         class_name = type(threads[-1]).__name__
