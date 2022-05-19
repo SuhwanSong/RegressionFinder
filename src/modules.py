@@ -15,6 +15,8 @@ from pathlib import Path
 from shutil import copyfile
 from bs4 import BeautifulSoup
 
+from jshelper import REDUCER
+
 
 class CrossVersion(Thread):
     def __init__(self, helper: IOQueue) -> None:
@@ -343,7 +345,9 @@ class Minimizer(CrossVersion):
     def __minimize_dom(self):
         br = self.get_newer_browser()
         br.run_html(self.__temp_file)
-        attrs = br.exec_script('return get_all_attrnames();')
+        attrs = br.exec_script(REDUCER.GET_ATTRNAMES)
+        if not attrs: return
+
         for i in range(len(attrs) - 1, 0, -1):
             br.run_html(self.__temp_file)
             br.exec_script(f'document.body.querySelectorAll(\'*\')[{i}].remove();')

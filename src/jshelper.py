@@ -802,4 +802,10 @@ class INTEROP:
     FONT="set_font();"
 
 class REDUCER:
-    GET_ATTRNAMES="get_all_attrnames();"
+    GET_ATTRNAMES="""let attrs = [];
+const elements = document.body.querySelectorAll('*');
+for (var i = 0; i < elements.length; i++) {
+  attrs.push(elements[i].getAttributeNames());
+}
+return attrs;
+"""
