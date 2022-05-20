@@ -21,8 +21,11 @@ from jshelper import REDUCER
 class CrossVersion(Thread):
     def __init__(self, helper: IOQueue) -> None:
         super().__init__()
-        self.helper = helper
         self.__br_list = []
+
+        self.helper = helper
+        self.saveshot = False
+
 
     def get_newer_browser(self) -> Browser:
         return self.__br_list[-1] if self.__br_list else None
@@ -40,11 +43,11 @@ class CrossVersion(Thread):
         for br in self.__br_list: br.kill_browser()
         self.__br_list.clear()
 
-    def cross_version_test_html(self, html_file: str, save_shot: bool = False) -> Optional[list]:
+    def cross_version_test_html(self, html_file: str) -> Optional[list]:
 
         img_hashes = []
         for br in self.__br_list:
-            hash_v = br.get_hash_from_html(html_file, save_shot)
+            hash_v = br.get_hash_from_html(html_file, self.saveshot)
             if not hash_v: return
 
             img_hashes.append(hash_v)
@@ -87,6 +90,7 @@ class Oracle(Thread):
         super().__init__()
         self.helper = helper
         self.__ref_br = None
+        self.saveshot = False
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
@@ -123,7 +127,7 @@ class Oracle(Thread):
                 if not self.start_ref_browser(cur_refv):
                     continue
 
-            ref_hash = self.__ref_br.get_hash_from_html(html_file)
+            ref_hash = self.__ref_br.get_hash_from_html(html_file, self.saveshot)
             if ref_hash and self.__is_regression(hashes, ref_hash):
                 hpr.update_postq(vers, html_file, hashes)
 
@@ -412,12 +416,12 @@ class Minimizer(CrossVersion):
 
 
 class R2Z2:
-    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int):
+    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int) -> None:
         self.__ioq = IOQueue(input_version_pair)
         self.__out_dir = output_dir
         self.__num_of_threads = num_of_threads
 
-    def test_wrapper(self, test_class: object):
+    def test_wrapper(self, test_class: object) -> None:
         threads = []
         for i in range(self.__num_of_threads):
             threads.append(test_class(self.__ioq))
@@ -437,10 +441,38 @@ class R2Z2:
         self.__ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
         self.__ioq.move_to_preqs()
 
-    def process(self):
-        self.test_wrapper(CrossVersion)
-        self.test_wrapper(Minimizer)
-        self.test_wrapper(Oracle)
-        self.test_wrapper(Bisecter)
-        self.test_wrapper(BisecterBuild)
+    def generate_report(self) -> None:
+        # generate report dir
+        dir_path = os.path.join(self.__out_dir, 'report')
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+        while True:
+            vers = self.__ioq.get_vers()
+            if not vers: break
+
+            result = self.__ioq.pop_from_queue()
+            if not result: break
+            html_file, _ = result
+
+            commit_dir_path = os.path.join(dir_path, str(vers[1]))
+            Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+
+
+        # make dir for each commit and copy files
+        # run Cross and Oracle for screenshot
+        #
+
+
+    def process(self) -> None:
+        tester = [
+                CrossVersion,
+                Minimizer,
+                Oracle,
+                Bisecter,
+                BisecterBuild
+        ]
+
+        for test in tester: 
+            self.test_wrapper(test)
 
