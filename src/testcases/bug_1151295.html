@@ -16,15 +16,6 @@ style.appendChild(document.createTextNode(css));
 }
 }
 
-function get_all_attrnames() {
-let attrs = [];
-const elements = document.body.querySelectorAll('*');
-for (var i = 0; i < elements.length; i++) {
-attrs.push(elements[i].getAttributeNames());
-}
-return attrs;
-}
-
 function trigger() {
 }
 
