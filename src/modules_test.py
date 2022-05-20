@@ -64,7 +64,7 @@ class TestModules(unittest.TestCase):
         versions = (base_commit_of_chrome, 
                     target_commit_of_chrome, 
                     firefox_version)
-        input_version_pair = {'./testcases/bug_1270713_oracle.html': versions}
+        input_version_pair = {'./testcases/bug_1270713.html': versions}
 
         ioq = IOQueue(input_version_pair)
         cv = CrossVersion(ioq)
@@ -96,7 +96,7 @@ class TestModules(unittest.TestCase):
                     None)
 
         input_version_pair = {
-                './testcases/bug_1270713_oracle.html': versions,
+                './testcases/bug_1270713.html': versions,
         }
 
         ioq = IOQueue(input_version_pair)
@@ -118,7 +118,7 @@ class TestModules(unittest.TestCase):
             self.assertEqual(base_answer, vers[0])
             self.assertEqual(target_answer, vers[1])
 
-
+"""
     def test_bisect_analysis_with_build(self):
 
         # bug commit is 921604
@@ -133,7 +133,7 @@ class TestModules(unittest.TestCase):
                     None)
 
         input_version_pair = {
-                './testcases/bug_1270713_oracle.html': versions,
+                './testcases/bug_1270713.html': versions,
         }
 
         ioq = IOQueue(input_version_pair)
@@ -154,7 +154,7 @@ class TestModules(unittest.TestCase):
             self.assertNotEqual(hashes[0], hashes[1])
             #self.assertEqual(base_answer, vers[0])
             #self.assertEqual(target_answer, vers[1])
-
+"""
 
 class TestRespins(unittest.TestCase):
     def test_2020_post_stable_regressions(self):

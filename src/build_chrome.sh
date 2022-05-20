@@ -23,26 +23,28 @@ echo $PWD
 #gclient sync -D --force --reset
 gclient sync -D 
 ./build/install-build-deps.sh
-
+sudo apt-get install python -y 
 gclient runhooks
 
 gn gen out/Release
-cp $CUR_DIR/build/args.gn out/Release
-
+cp $CUR_DIR/data/args.gn out/Release
 gn gen out/Release
+goma_ctl start
+
 autoninja -C out/Release chrome
 
 rm -rf out/$GIT_VER
-cp -r out/Release out/$GIT_VER
+mv out/Release out/$GIT_VER
 
 
 gn gen out/chromedriver
 autoninja -C out/chromedriver chromedriver
 
 rm -rf out/$GIT_VER/chrd
-cp -r out/chromedriver out/$GIT_VER/chrd
+mv out/chromedriver out/$GIT_VER/chrd
 
 
 mkdir $CUR_DIR/chrome/$BRV
 ln -s `pwd`/out/$GIT_VER/chrome $CUR_DIR/chrome/$BRV/chrome
 ln -s `pwd`/out/$GIT_VER/chrd/chromedriver $CUR_DIR/chrome/$BRV/chromedriver
+goma_ctl stop

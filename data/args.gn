@@ -1,0 +1,3 @@
+is_debug = false
+use_goma = true
+symbol_level = 0
