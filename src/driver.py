@@ -4,7 +4,7 @@ from pathlib import Path
 from helper import ImageDiff
 from helper import FileManager
 
-from jshelper import JSCODE
+from jshelper import AHEM_FONT
 from selenium import webdriver
 
 
@@ -39,6 +39,7 @@ class Browser:
         self.__browser_type = browser_type
 
         self.version = commit_version
+
 
     def setup_browser(self):
         self.__num_of_run = 0
@@ -100,8 +101,26 @@ class Browser:
     def exec_script(self, scr, arg=None):
         try:
             return self.browser.execute_script(scr, arg)
-        except:
+        except Exception as e:
+            print ('exec_script', e)
             return None
+
+    def false_negative_reduction(self, html_file):
+        try:
+            self.browser.get('file://' + abspath(html_file))
+        except Exception as e:
+            print ('run_html', e)
+            self.kill_browser()
+            self.setup_browser()
+            return False
+        self.exec_script(AHEM_FONT)
+        source = self.get_source()
+        self.browser.get(f"data:text/html;charset=utf-8,{source}")
+
+        # invalidation bug trigger
+        self.exec_script('trigger();')
+        self.__num_of_run += 1
+        return True
 
     def run_html(self, html_file):
         try:
@@ -111,22 +130,29 @@ class Browser:
             self.kill_browser()
             self.setup_browser()
             return False
-        self.exec_script(JSCODE)
+
+        # invalidation bug trigger
         self.exec_script('trigger();')
         self.__num_of_run += 1
         return True
 
-    def get_hash_from_html(self, html_file, save_shot: bool = False):
-        if not self.run_html(html_file): return
-        
+    def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = True):
+        if fn_reduction:
+            ret = self.false_negative_reduction(html_file)
+        else:
+            ret = self.run_html(html_file)
+
+        if not ret: return 
+
         #save_shot = True
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
-        
+
         hash_v = self.__screenshot_and_hash(screenshot_name)
         if not hash_v: return
 
         for _ in range(2):
             if hash_v != self.__screenshot_and_hash(screenshot_name):
                 return
+
         return hash_v
