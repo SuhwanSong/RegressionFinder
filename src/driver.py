@@ -5,7 +5,6 @@ from helper import ImageDiff
 from helper import FileManager
 
 from jshelper import AHEM_FONT
-from jshelper import SET_FONT
 from selenium import webdriver
 
 
@@ -115,7 +114,6 @@ class Browser:
             self.setup_browser()
             return False
         self.exec_script(AHEM_FONT)
-        self.exec_script(SET_FONT)
         source = self.get_source()
 
         html_file = abspath(html_file) + '-fnr.html'

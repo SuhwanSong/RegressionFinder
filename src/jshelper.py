@@ -791,9 +791,6 @@ AHEM_FONT="""
 
 `;
   document.head.append(script_tag);
-"""
-
-SET_FONT="""
   var css = `* { font: 10px/10px Ahem;} body {overflow:hidden;}`,
   head = document.head,
   style = document.createElement('style');
