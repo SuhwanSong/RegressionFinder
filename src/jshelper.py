@@ -791,11 +791,14 @@ AHEM_FONT="""
 
 `;
   document.head.append(script_tag);
-//  const css = `
-//  * { font: 20px/20px Ahem;}`;
-//  const style = document.createElement('style');
-//  style.textContent = css;
-//  document.head.appendChild(style);
+"""
+
+SET_FONT="""
+  var css = `* { font: 10px/10px Ahem;} body {overflow:hidden;}`,
+  head = document.head,
+  style = document.createElement('style');
+  head.append(style);
+  style.appendChild(document.createTextNode(css));
 """
 
 GET_ATTRNAMES="""

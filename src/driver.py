@@ -5,6 +5,7 @@ from helper import ImageDiff
 from helper import FileManager
 
 from jshelper import AHEM_FONT
+from jshelper import SET_FONT
 from selenium import webdriver
 
 
@@ -95,7 +96,7 @@ class Browser:
             self.browser.quit()
 
     def get_source(self):
-        try: return self.browser.page_source
+        try: return '<!DOCTYPE html>' + self.browser.page_source
         except: return
 
     def exec_script(self, scr, arg=None):
@@ -114,11 +115,17 @@ class Browser:
             self.setup_browser()
             return False
         self.exec_script(AHEM_FONT)
+        self.exec_script(SET_FONT)
         source = self.get_source()
-        self.browser.get(f"data:text/html;charset=utf-8,{source}")
+
+        html_file = abspath(html_file) + '-fnr.html'
+        FileManager.write_file(html_file, source)
+        self.browser.get('file://' + html_file)
+        #self.browser.get(f"data:text/html;charset=utf-8,{source}")
+
 
         # invalidation bug trigger
-        self.exec_script('trigger();')
+        self.exec_script('if (typeof trigger === "function") {trigger();}')
         self.__num_of_run += 1
         return True
 
@@ -131,12 +138,14 @@ class Browser:
             self.setup_browser()
             return False
 
+        self.exec_script(AHEM_FONT)
         # invalidation bug trigger
-        self.exec_script('trigger();')
+        self.exec_script('if (typeof trigger === "function") {trigger();}')
         self.__num_of_run += 1
         return True
 
-    def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = True):
+    def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
+        fn_reduction = True
         if fn_reduction:
             ret = self.false_negative_reduction(html_file)
         else:

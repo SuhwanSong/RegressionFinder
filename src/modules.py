@@ -322,7 +322,7 @@ class Minimizer(CrossVersion):
         #print (style_lines)
 
         min_lines = style_lines
-        for i in range(len(style_lines)):
+        for i in range(len(style_lines) - 3):
             min_line = self.__minimize_sline(i, min_lines)
             min_lines[i] = min_line
 
