@@ -791,11 +791,16 @@ AHEM_FONT="""
 
 `;
   document.head.append(script_tag);
-  var css = `* { font: 10px/10px Ahem;} body {overflow:hidden;}`,
-  head = document.head,
-  style = document.createElement('style');
-  head.append(style);
-  style.appendChild(document.createTextNode(css));
+
+//  const sheet = document.styleSheets[0];
+//  sheet.insertRule('{* {font: 10px/10px Ahem;}');
+//  sheet.insertRule('{body {overflow:hidden;}');
+
+//  var css = `* { font: 10px/10px Ahem;} body {overflow:hidden;}`,
+//  head = document.head,
+//  style = document.createElement('style');
+//  head.append(style);
+//  style.appendChild(document.createTextNode(css));
 """
 
 GET_ATTRNAMES="""

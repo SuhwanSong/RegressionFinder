@@ -5,6 +5,7 @@ from helper import ImageDiff
 from helper import FileManager
 
 from jshelper import AHEM_FONT
+
 from selenium import webdriver
 
 
@@ -97,12 +98,16 @@ class Browser:
     def get_source(self):
         try: return '<!DOCTYPE html>' + self.browser.page_source
         except: return
+#        try: return self.exec_script(GET_SOURCE)
+#        except Exception as e: 
+#            print (e)
+#            return 
 
     def exec_script(self, scr, arg=None):
         try:
             return self.browser.execute_script(scr, arg)
         except Exception as e:
-            print ('exec_script', e)
+            print ('exec_script', scr , e)
             return None
 
     def false_negative_reduction(self, html_file):
