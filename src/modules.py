@@ -323,7 +323,7 @@ class Minimizer(CrossVersion):
         #print (style_lines)
 
         min_lines = style_lines
-        for i in range(len(style_lines) - 3):
+        for i in range(len(style_lines) - 4):
             min_line = self.__minimize_sline(i, min_lines)
             min_lines[i] = min_line
 
@@ -514,7 +514,7 @@ class Finder:
         ref_br = Browser('chrome', self.__answer_version)
         ref_br.setup_browser()
 
-        result = {}
+        final_result = {}
 
         hpr = self.__ioq
         while True:
@@ -530,21 +530,27 @@ class Finder:
             ref_hash = ref_br.get_hash_from_html(html_file)
             if ref_hash and hashes[0] == ref_hash:
                 hpr.update_postq(vers, html_file, hashes)
-                result[html_file] = 'true bug'
+                final_result[html_file] = 'true bug'
             else:
-                result[html_file] = 'false positive'
+                final_result[html_file] = 'false positive'
 
         ref_br.kill_browser()
-        print (result)
+        print (final_result)
+        dir_path = os.path.join(self.__out_dir, 'answer')
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+        self.__ioq.dump_queue(dir_path)
+        self.__ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
+        self.__ioq.move_to_preqs()
 
     def process(self) -> None:
         tester = [
                 CrossVersion,
                 Minimizer,
                 Oracle,
+                Bisecter
         ]
 
         for test in tester: 
             self.test_wrapper(test)
 
-        #self.answer()
+        self.answer()
