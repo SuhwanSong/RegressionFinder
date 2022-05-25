@@ -4,7 +4,8 @@ from pathlib import Path
 from helper import ImageDiff
 from helper import FileManager
 
-from jshelper import JSCODE
+from jshelper import AHEM_FONT
+
 from selenium import webdriver
 
 
@@ -39,6 +40,7 @@ class Browser:
         self.__browser_type = browser_type
 
         self.version = commit_version
+        
 
     def setup_browser(self):
         self.__num_of_run = 0
@@ -66,7 +68,7 @@ class Browser:
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
 
-        #print (f'{self.__browser_type} {self.version} starts ...')
+        print (f'{self.__browser_type} {self.version} starts ...')
         return True
 
 
@@ -94,16 +96,21 @@ class Browser:
             self.browser.quit()
 
     def get_source(self):
-        try: return self.browser.page_source
+        try: return '<!DOCTYPE html>' + self.browser.page_source
         except: return
+#        try: return self.exec_script(GET_SOURCE)
+#        except Exception as e: 
+#            print (e)
+#            return 
 
     def exec_script(self, scr, arg=None):
         try:
             return self.browser.execute_script(scr, arg)
-        except:
+        except Exception as e:
+            print ('exec_script', scr , e)
             return None
 
-    def run_html(self, html_file):
+    def false_negative_reduction(self, html_file):
         try:
             self.browser.get('file://' + abspath(html_file))
         except Exception as e:
@@ -111,18 +118,42 @@ class Browser:
             self.kill_browser()
             self.setup_browser()
             return False
-        self.exec_script(JSCODE)
-        self.exec_script('trigger();')
+        self.exec_script(AHEM_FONT)
+        source = self.get_source()
+
+        #html_file = abspath(html_file) + '-fnr.html'
+        #FileManager.write_file(html_file, source)
+        #self.browser.get('file://' + html_file)
+        self.browser.get(f"data:text/html;charset=utf-8,{source}")
+
+        # invalidation bug trigger
+        self.exec_script('if (typeof trigger === "function") {trigger();}')
         self.__num_of_run += 1
         return True
 
-    def get_hash_from_html(self, html_file, save_shot: bool = False):
-        if not self.run_html(html_file): return
-        
+    def run_html(self, html_file: str, fn_reduction: bool = False):
+        try:
+            self.browser.get('file://' + abspath(html_file))
+        except Exception as e:
+            print ('run_html', e)
+            self.kill_browser()
+            self.setup_browser()
+            return False
+        if fn_reduction: 
+            self.exec_script(AHEM_FONT)
+        # invalidation bug trigger
+        self.exec_script('if (typeof trigger === "function") {trigger();}')
+        self.__num_of_run += 1
+        return True
+
+    def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
+        ret = self.run_html(html_file, fn_reduction)
+        if not ret: return 
+
         #save_shot = True
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
-        
+
         hash_v = self.__screenshot_and_hash(screenshot_name)
         if not hash_v: return
 

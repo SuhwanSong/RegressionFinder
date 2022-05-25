@@ -119,7 +119,7 @@ def build_chrome_binary(pos):
 def main():
     tar = sys.argv[1]
     pos = sys.argv[2]
-    download_chrome(tar, pos)
+    download_chrome_binary(tar, pos)
     return 0
 
 
