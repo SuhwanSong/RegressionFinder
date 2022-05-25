@@ -43,12 +43,13 @@ class CrossVersion(Thread):
         for br in self.__br_list: br.kill_browser()
         self.__br_list.clear()
 
-    def cross_version_test_html(self, html_file: str) -> Optional[list]:
-
+    def cross_version_test_html(self, html_file: str, fn_reduction: bool = False) -> Optional[list]:
         img_hashes = []
         for br in self.__br_list:
-            hash_v = br.get_hash_from_html(html_file, self.saveshot)
-            if not hash_v: return
+            hash_v = br.get_hash_from_html(html_file, self.saveshot, fn_reduction)
+            if not hash_v: 
+                print ('something wrong?')
+                return
 
             img_hashes.append(hash_v)
 
@@ -89,20 +90,20 @@ class Oracle(Thread):
     def __init__(self, helper: IOQueue) -> None:
         super().__init__()
         self.helper = helper
-        self.__ref_br = None
+        self.ref_br = None
         self.saveshot = False
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
-        self.__ref_br = Browser('firefox', ver)
-        return self.__ref_br.setup_browser()
+        self.ref_br = Browser('firefox', ver)
+        return self.ref_br.setup_browser()
 
     def stop_ref_browser(self):
-        if self.__ref_br:
-            self.__ref_br.kill_browser()
-            self.__ref_br = None
+        if self.ref_br:
+            self.ref_br.kill_browser()
+            self.ref_br = None
 
-    def __is_regression(self, hashes: tuple, ref_hash) -> bool:
+    def is_regression(self, hashes: tuple, ref_hash) -> bool:
         #return hashes[0] != hashes[1] and hashes[0] == ref_hash
         return hashes[0] == ref_hash
 
@@ -127,8 +128,8 @@ class Oracle(Thread):
                 if not self.start_ref_browser(cur_refv):
                     continue
 
-            ref_hash = self.__ref_br.get_hash_from_html(html_file, self.saveshot)
-            if ref_hash and self.__is_regression(hashes, ref_hash):
+            ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, True)
+            if ref_hash and self.is_regression(hashes, ref_hash):
                 hpr.update_postq(vers, html_file, hashes)
 
         self.stop_ref_browser()
@@ -138,18 +139,18 @@ class Bisecter(Thread):
     def __init__(self, helper: IOQueue) -> None:
         super().__init__()
         self.helper = helper
-        self.__ref_br = None
+        self.ref_br = None
         self.__version_list = [] 
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
-        self.__ref_br = Browser('chrome', ver)
-        return self.__ref_br.setup_browser()
+        self.ref_br = Browser('chrome', ver)
+        return self.ref_br.setup_browser()
 
     def stop_ref_browser(self) -> None:
-        if self.__ref_br:
-            self.__ref_br.kill_browser()
-            self.__ref_br = None
+        if self.ref_br:
+            self.ref_br.kill_browser()
+            self.ref_br = None
 
     def set_version_list(self) -> None:
         self.__version_list = FileManager.get_bisect_csv()
@@ -197,7 +198,7 @@ class Bisecter(Thread):
                 if not self.start_ref_browser(cur_mid):
                     continue
 
-            ref_hash = self.__ref_br.get_hash_from_html(html_file)
+            ref_hash = self.ref_br.get_hash_from_html(html_file)
             if not ref_hash: continue
 
             if hashes[0] == ref_hash:
@@ -370,6 +371,7 @@ class Minimizer(CrossVersion):
                             f'document.body.querySelectorAll(\'*\')[{i}].removeAttribute(\'{attr}\');')
     
                     text = br.get_source()
+                    if not text: continue
                     FileManager.write_file(self.__trim_file, text)
                     hashes = self.cross_version_test_html(self.__trim_file) 
                     if self.is_bug(hashes):
@@ -403,7 +405,7 @@ class Minimizer(CrossVersion):
             if self.__initial_test(html_file):
                 self.__minimizing()
 
-                hashes = self.cross_version_test_html(self.__temp_file)
+                hashes = self.cross_version_test_html(self.__temp_file, True)
                 #print ('after', hashes[0] - hashes[1])
                 min_html_file = os.path.splitext(html_file)[0] + '-min.html'
                 copyfile(self.__temp_file, min_html_file)
@@ -441,6 +443,7 @@ class R2Z2:
         self.__ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
         self.__ioq.move_to_preqs()
 
+
     def generate_report(self) -> None:
         # generate report dir
         dir_path = os.path.join(self.__out_dir, 'report')
@@ -476,3 +479,72 @@ class R2Z2:
         for test in tester: 
             self.test_wrapper(test)
 
+
+
+class Finder:
+    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int, answer_version: int) -> None:
+        self.__ioq = IOQueue(input_version_pair)
+        self.__out_dir = output_dir
+        self.__num_of_threads = num_of_threads
+        self.__answer_version = answer_version
+
+    def test_wrapper(self, test_class: object) -> None:
+        threads = []
+        for i in range(self.__num_of_threads):
+            threads.append(test_class(self.__ioq))
+
+        class_name = type(threads[-1]).__name__
+        print (f'{class_name} stage starts...')
+
+        for th in threads:
+            th.start()
+
+        for th in threads:
+            th.join()
+
+        dir_path = os.path.join(self.__out_dir, class_name)
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+        self.__ioq.dump_queue(dir_path)
+        self.__ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
+        self.__ioq.move_to_preqs()
+
+
+    def answer(self) -> None:
+        print ('answer step')
+        ref_br = Browser('chrome', self.__answer_version)
+        ref_br.setup_browser()
+
+        result = {}
+
+        hpr = self.__ioq
+        while True:
+            vers = hpr.get_vers()
+            if not vers: break
+
+            result = hpr.pop_from_queue()
+            if not result: break
+            html_file, hashes = result
+            if len(hashes) != 2:
+                raise ValueError('Something wrong in hashes...')
+
+            ref_hash = ref_br.get_hash_from_html(html_file)
+            if ref_hash and hashes[0] == ref_hash:
+                hpr.update_postq(vers, html_file, hashes)
+                result[html_file] = 'true bug'
+            else:
+                result[html_file] = 'false positive'
+
+        ref_br.kill_browser()
+        print (result)
+
+    def process(self) -> None:
+        tester = [
+                CrossVersion,
+                Minimizer,
+                Oracle,
+        ]
+
+        for test in tester: 
+            self.test_wrapper(test)
+
+        #self.answer()

@@ -40,7 +40,7 @@ class Browser:
         self.__browser_type = browser_type
 
         self.version = commit_version
-
+        
 
     def setup_browser(self):
         self.__num_of_run = 0
@@ -68,7 +68,7 @@ class Browser:
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
 
-        #print (f'{self.__browser_type} {self.version} starts ...')
+        print (f'{self.__browser_type} {self.version} starts ...')
         return True
 
 
@@ -121,18 +121,17 @@ class Browser:
         self.exec_script(AHEM_FONT)
         source = self.get_source()
 
-        html_file = abspath(html_file) + '-fnr.html'
-        FileManager.write_file(html_file, source)
-        self.browser.get('file://' + html_file)
-        #self.browser.get(f"data:text/html;charset=utf-8,{source}")
-
+        #html_file = abspath(html_file) + '-fnr.html'
+        #FileManager.write_file(html_file, source)
+        #self.browser.get('file://' + html_file)
+        self.browser.get(f"data:text/html;charset=utf-8,{source}")
 
         # invalidation bug trigger
         self.exec_script('if (typeof trigger === "function") {trigger();}')
         self.__num_of_run += 1
         return True
 
-    def run_html(self, html_file):
+    def run_html(self, html_file: str, fn_reduction: bool = False):
         try:
             self.browser.get('file://' + abspath(html_file))
         except Exception as e:
@@ -140,20 +139,15 @@ class Browser:
             self.kill_browser()
             self.setup_browser()
             return False
-
-        self.exec_script(AHEM_FONT)
+        if fn_reduction: 
+            self.exec_script(AHEM_FONT)
         # invalidation bug trigger
         self.exec_script('if (typeof trigger === "function") {trigger();}')
         self.__num_of_run += 1
         return True
 
     def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
-        fn_reduction = True
-        if fn_reduction:
-            ret = self.false_negative_reduction(html_file)
-        else:
-            ret = self.run_html(html_file)
-
+        ret = self.run_html(html_file, fn_reduction)
         if not ret: return 
 
         #save_shot = True
@@ -166,5 +160,4 @@ class Browser:
         for _ in range(2):
             if hash_v != self.__screenshot_and_hash(screenshot_name):
                 return
-
         return hash_v
