@@ -25,7 +25,11 @@ class CrossVersion(Thread):
 
         self.helper = helper
         self.saveshot = False
+        self.fnr = False
 
+    def report_mode(self) -> None:
+        self.saveshot = True
+        self.fnr = True
 
     def get_newer_browser(self) -> Browser:
         return self.__br_list[-1] if self.__br_list else None
@@ -79,7 +83,7 @@ class CrossVersion(Thread):
                     continue
 
 
-            hashes = self.cross_version_test_html(html_file)
+            hashes = self.cross_version_test_html(html_file, self.fnr)
             if self.is_bug(hashes):
                 hpr.update_postq(vers, html_file, hashes)
 
@@ -140,7 +144,8 @@ class Bisecter(Thread):
         super().__init__()
         self.helper = helper
         self.ref_br = None
-        self.__version_list = [] 
+        self.__version_list = []
+        self.saveshot = False
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
@@ -198,7 +203,7 @@ class Bisecter(Thread):
                 if not self.start_ref_browser(cur_mid):
                     continue
 
-            ref_hash = self.ref_br.get_hash_from_html(html_file, False, True)
+            ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, True)
             if not ref_hash: continue
 
             if hashes[0] == ref_hash:
@@ -424,48 +429,31 @@ class R2Z2:
         self.out_dir = output_dir
         self.num_of_threads = num_of_threads
 
-    def test_wrapper(self, test_class: object) -> None:
+    def test_wrapper(self, test_class: object, report: bool = False) -> None:
         threads = []
         for i in range(self.num_of_threads):
             threads.append(test_class(self.ioq))
+            threads[-1].saveshot = report
 
         class_name = type(threads[-1]).__name__
         print (f'{class_name} stage starts...')
 
+        dirname = class_name if not report else 'Report'
+
+            
+
         for th in threads:
+            if report: th.report_mode()
             th.start()
 
         for th in threads:
             th.join()
 
-        dir_path = os.path.join(self.out_dir, class_name)
-        Path(dir_path).mkdir(parents=True, exist_ok=True)
-        self.ioq.dump_queue(dir_path)
+        dir_path = os.path.join(self.out_dir, dirname)
+        if not report:
+            self.ioq.dump_queue(dir_path)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
         self.ioq.move_to_preqs()
-
-
-    def generate_report(self) -> None:
-        # generate report dir
-        dir_path = os.path.join(self.out_dir, 'report')
-        Path(dir_path).mkdir(parents=True, exist_ok=True)
-
-        while True:
-            vers = self.ioq.get_vers()
-            if not vers: break
-
-            result = self.ioq.pop_from_queue()
-            if not result: break
-            html_file, _ = result
-
-            commit_dir_path = os.path.join(dir_path, str(vers[1]))
-            Path(dir_path).mkdir(parents=True, exist_ok=True)
-
-
-
-        # make dir for each commit and copy files
-        # run Cross and Oracle for screenshot
-        #
 
 
     def process(self) -> None:
@@ -480,6 +468,15 @@ class R2Z2:
         for test in tester: 
             self.test_wrapper(test)
 
+        self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
+
+        report = [
+                CrossVersion,
+        ]
+
+        for test in report: 
+            self.test_wrapper(test, True)
+
 
 
 class Finder(R2Z2):
@@ -493,8 +490,6 @@ class Finder(R2Z2):
         ref_br = Browser('chrome', self.__answer_version)
         ref_br.setup_browser()
 
-        final_result = {}
-
         hpr = self.ioq
         while True:
             vers = hpr.get_vers()
@@ -506,20 +501,15 @@ class Finder(R2Z2):
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
-            ref_hash = ref_br.get_hash_from_html(html_file, False, True)
+            ref_hash = ref_br.get_hash_from_html(html_file, True, True)
             if ref_hash and hashes[0] == ref_hash:
                 hpr.update_postq(vers, html_file, hashes)
-                final_result[html_file] = 'true bug'
-            else:
-                final_result[html_file] = 'false positive'
 
         ref_br.kill_browser()
-        print (final_result)
         dir_path = os.path.join(self.out_dir, 'answer')
         Path(dir_path).mkdir(parents=True, exist_ok=True)
-        self.ioq.dump_queue(dir_path)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
-        self.ioq.move_to_preqs()
+
 
     def process(self) -> None:
         tester = [
@@ -531,5 +521,14 @@ class Finder(R2Z2):
 
         for test in tester: 
             self.test_wrapper(test)
+
+        self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
+
+        report = [
+                CrossVersion,
+        ]
+
+        for test in report: 
+            self.test_wrapper(test, True)
 
         self.answer()

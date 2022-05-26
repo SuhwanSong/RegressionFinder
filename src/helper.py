@@ -12,6 +12,7 @@ from random import choice
 from threading import Lock
 from collections import defaultdict
 
+from pathlib import Path
 from typing import Optional
 from shutil import copyfile 
 from chrome_binary import build_chrome_binary
@@ -116,6 +117,7 @@ class IOQueue:
     def dump_queue(self, dir_path):
         num = 0
         self.__queue_lock.acquire()
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
         for vers, q in self.__postqs.items():
             length = q.qsize()
             for _ in range(length):
@@ -140,6 +142,27 @@ class IOQueue:
                     base, target, ref = key
                     c.writerow([str(base), str(target), str(ref), html_file])
                
+        self.__queue_lock.release()
+
+
+    def dump_queue_with_sort(self, dir_path):
+        self.__queue_lock.acquire()
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+        keys = self.__preqs.keys()
+        for vers in keys:
+            num = 0
+            q = self.__preqs[vers]
+            length = q.qsize()
+            cur_path = join(dir_path, str(vers[1]))
+            Path(cur_path).mkdir(parents=True, exist_ok=True)
+            for _ in range(length):
+                html_file, hashes = q.get()
+                name = 'id-' + str(num).zfill(6)
+                new_html_file = join(cur_path, f'{name}.html')
+                copyfile(html_file, new_html_file)
+                q.put((new_html_file, hashes))
+                num += 1
+
         self.__queue_lock.release()
 
 

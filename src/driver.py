@@ -59,7 +59,7 @@ class Browser:
             return False
 
         WIDTH  = 1024
-        HEIGHT = 500
+        HEIGHT = 1024
         TIMEOUT = 10
 
         self.__set_viewport_size(WIDTH, HEIGHT)
