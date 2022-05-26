@@ -40,7 +40,6 @@ class Browser:
         self.__browser_type = browser_type
 
         self.version = commit_version
-        
 
     def setup_browser(self):
         self.__num_of_run = 0
@@ -68,7 +67,7 @@ class Browser:
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
 
-        print (f'{self.__browser_type} {self.version} starts ...')
+        #print (f'{self.__browser_type} {self.version} starts ...')
         return True
 
 

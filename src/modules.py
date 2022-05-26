@@ -198,7 +198,7 @@ class Bisecter(Thread):
                 if not self.start_ref_browser(cur_mid):
                     continue
 
-            ref_hash = self.ref_br.get_hash_from_html(html_file)
+            ref_hash = self.ref_br.get_hash_from_html(html_file, False, True)
             if not ref_hash: continue
 
             if hashes[0] == ref_hash:
@@ -209,6 +209,7 @@ class Bisecter(Thread):
                 low = start
                 high = self.convert_to_ver(mid_idx - 1)
             else:
+                print (html_file, 'is skipped;')
                 continue
 
             hpr.insert_to_queue((low, high, ref), html_file, hashes)
@@ -419,14 +420,14 @@ class Minimizer(CrossVersion):
 
 class R2Z2:
     def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int) -> None:
-        self.__ioq = IOQueue(input_version_pair)
-        self.__out_dir = output_dir
-        self.__num_of_threads = num_of_threads
+        self.ioq = IOQueue(input_version_pair)
+        self.out_dir = output_dir
+        self.num_of_threads = num_of_threads
 
     def test_wrapper(self, test_class: object) -> None:
         threads = []
-        for i in range(self.__num_of_threads):
-            threads.append(test_class(self.__ioq))
+        for i in range(self.num_of_threads):
+            threads.append(test_class(self.ioq))
 
         class_name = type(threads[-1]).__name__
         print (f'{class_name} stage starts...')
@@ -437,23 +438,23 @@ class R2Z2:
         for th in threads:
             th.join()
 
-        dir_path = os.path.join(self.__out_dir, class_name)
+        dir_path = os.path.join(self.out_dir, class_name)
         Path(dir_path).mkdir(parents=True, exist_ok=True)
-        self.__ioq.dump_queue(dir_path)
-        self.__ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
-        self.__ioq.move_to_preqs()
+        self.ioq.dump_queue(dir_path)
+        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
+        self.ioq.move_to_preqs()
 
 
     def generate_report(self) -> None:
         # generate report dir
-        dir_path = os.path.join(self.__out_dir, 'report')
+        dir_path = os.path.join(self.out_dir, 'report')
         Path(dir_path).mkdir(parents=True, exist_ok=True)
 
         while True:
-            vers = self.__ioq.get_vers()
+            vers = self.ioq.get_vers()
             if not vers: break
 
-            result = self.__ioq.pop_from_queue()
+            result = self.ioq.pop_from_queue()
             if not result: break
             html_file, _ = result
 
@@ -481,32 +482,10 @@ class R2Z2:
 
 
 
-class Finder:
+class Finder(R2Z2):
     def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int, answer_version: int) -> None:
-        self.__ioq = IOQueue(input_version_pair)
-        self.__out_dir = output_dir
-        self.__num_of_threads = num_of_threads
+        super().__init__(input_version_pair, output_dir, num_of_threads)
         self.__answer_version = answer_version
-
-    def test_wrapper(self, test_class: object) -> None:
-        threads = []
-        for i in range(self.__num_of_threads):
-            threads.append(test_class(self.__ioq))
-
-        class_name = type(threads[-1]).__name__
-        print (f'{class_name} stage starts...')
-
-        for th in threads:
-            th.start()
-
-        for th in threads:
-            th.join()
-
-        dir_path = os.path.join(self.__out_dir, class_name)
-        Path(dir_path).mkdir(parents=True, exist_ok=True)
-        self.__ioq.dump_queue(dir_path)
-        self.__ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
-        self.__ioq.move_to_preqs()
 
 
     def answer(self) -> None:
@@ -516,7 +495,7 @@ class Finder:
 
         final_result = {}
 
-        hpr = self.__ioq
+        hpr = self.ioq
         while True:
             vers = hpr.get_vers()
             if not vers: break
@@ -527,7 +506,7 @@ class Finder:
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
-            ref_hash = ref_br.get_hash_from_html(html_file)
+            ref_hash = ref_br.get_hash_from_html(html_file, False, True)
             if ref_hash and hashes[0] == ref_hash:
                 hpr.update_postq(vers, html_file, hashes)
                 final_result[html_file] = 'true bug'
@@ -536,18 +515,18 @@ class Finder:
 
         ref_br.kill_browser()
         print (final_result)
-        dir_path = os.path.join(self.__out_dir, 'answer')
+        dir_path = os.path.join(self.out_dir, 'answer')
         Path(dir_path).mkdir(parents=True, exist_ok=True)
-        self.__ioq.dump_queue(dir_path)
-        self.__ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
-        self.__ioq.move_to_preqs()
+        self.ioq.dump_queue(dir_path)
+        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
+        self.ioq.move_to_preqs()
 
     def process(self) -> None:
         tester = [
                 CrossVersion,
                 Minimizer,
                 Oracle,
-                Bisecter
+                Bisecter,
         ]
 
         for test in tester: 
