@@ -9,7 +9,7 @@ BRV=$2
 
 pushd $CHM_DIR
 git checkout -f $GIT_VER || exit 1
-git reset --hard
+#git reset --hard
 COMMIT_DATE=$(git log -n 1 --pretty=format:%ci)
 
 pushd $TOL_DIR/depot_tools
@@ -29,19 +29,30 @@ gclient runhooks
 gn gen out/Release
 cp $CUR_DIR/data/args.gn out/Release
 gn gen out/Release
-goma_ctl start
+goma_ctl ensure_start
 
 autoninja -C out/Release chrome
+retVal=$?
+if [ $retVal -ne 0 ]; then
+    echo "Error"
+    rm -rf out/Release
+    autoninja -C out/Release chrome
+fi
 
 rm -rf out/$GIT_VER
-mv out/Release out/$GIT_VER
-
+cp -r out/Release out/$GIT_VER
 
 gn gen out/chromedriver
 autoninja -C out/chromedriver chromedriver
+retVal=$?
+if [ $retVal -ne 0 ]; then
+    echo "Error"
+    rm -rf out/chromedriver
+    autoninja -C out/chromedriver chromedriver
+fi
 
 rm -rf out/$GIT_VER/chrd
-mv out/chromedriver out/$GIT_VER/chrd
+cp -r out/chromedriver out/$GIT_VER/chrd
 
 
 mkdir $CUR_DIR/chrome/$BRV
