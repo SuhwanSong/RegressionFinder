@@ -43,20 +43,21 @@ class Browser:
 
     def setup_browser(self):
         self.__num_of_run = 0
-        try:
-            if self.__browser_type == 'chrome':
-                self.browser = webdriver.Chrome(options=self.options,
-                        executable_path=self.options.binary_location + 'driver')
 
-            elif self.__browser_type == 'firefox':
-                self.browser = webdriver.Firefox(options=self.options,
-                        executable_path=self.options.binary_location + 'driver')
+        for _ in range(10):
+            try:
+                if self.__browser_type == 'chrome':
+                    self.browser = webdriver.Chrome(options=self.options,
+                            executable_path=self.options.binary_location + 'driver')
+                elif self.__browser_type == 'firefox':
+                    self.browser = webdriver.Firefox(options=self.options,
+                            executable_path=self.options.binary_location + 'driver')
+                else:
+                    raise ValueError('Check browser type')
+                break
 
-            else:
-                raise ValueError('Check browser type')
-        except Exception as e:
-            print ('setup_browser', e)
-            return False
+            except Exception as e:
+                pass
 
         WIDTH  = 1024
         HEIGHT = 1024
@@ -106,14 +107,15 @@ class Browser:
         try:
             return self.browser.execute_script(scr, arg)
         except Exception as e:
-            print ('exec_script', scr , e)
+            print ('Error in exec_script')
             return None
 
     def false_negative_reduction(self, html_file):
         try:
             self.browser.get('file://' + abspath(html_file))
         except Exception as e:
-            print ('run_html', e)
+            print ('Error in run_html')
+            #print ('run_html', e)
             self.kill_browser()
             self.setup_browser()
             return False
@@ -134,7 +136,8 @@ class Browser:
         try:
             self.browser.get('file://' + abspath(html_file))
         except Exception as e:
-            print ('run_html', e)
+            print ('Error in run_html')
+            #print ('run_html', e)
             self.kill_browser()
             self.setup_browser()
             return False
@@ -143,6 +146,9 @@ class Browser:
         # invalidation bug trigger
         self.exec_script('if (typeof trigger === "function") {trigger();}')
         self.__num_of_run += 1
+        if self.__num_of_run % 1000 == 0:
+            self.kill_browser()
+            self.setup_browser()
         return True
 
     def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):

@@ -118,7 +118,9 @@ class IOQueue:
         num = 0
         self.__queue_lock.acquire()
         Path(dir_path).mkdir(parents=True, exist_ok=True)
-        for vers, q in self.__postqs.items():
+        keys = self.__postqs.keys()
+        for vers in keys:
+            q = self.__postqs[vers]
             length = q.qsize()
             for _ in range(length):
                 html_file, hashes = q.get()
