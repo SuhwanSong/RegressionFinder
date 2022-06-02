@@ -118,9 +118,9 @@ class IOQueue:
         num = 0
         self.__queue_lock.acquire()
         Path(dir_path).mkdir(parents=True, exist_ok=True)
-        keys = self.__postqs.keys()
+        keys = self.__preqs.keys()
         for vers in keys:
-            q = self.__postqs[vers]
+            q = self.__preqs[vers]
             length = q.qsize()
             for _ in range(length):
                 html_file, hashes = q.get()
@@ -138,7 +138,9 @@ class IOQueue:
         with open(path, 'w') as fp:
             c = csv.writer(fp)
             c.writerow(header)
-            for key, q in self.__postqs.items():
+            keys = self.__preqs.keys()
+            for key in keys:
+                q = self.__preqs[key]
                 for value in list(q.queue):
                     html_file, hashes = value
                     base, target, ref = key

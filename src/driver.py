@@ -1,3 +1,4 @@
+from os import environ
 from os.path import dirname, join, abspath, splitext
 
 from pathlib import Path
@@ -11,6 +12,8 @@ from selenium import webdriver
 
 class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
+        environ["DBUS_SESSION_BUS_ADDRESS"] = '/dev/null'
+
         if browser_type == 'chrome':
             options = [
                     '--headless',
@@ -96,7 +99,7 @@ class Browser:
             self.browser.quit()
 
     def get_source(self):
-        try: return '<!DOCTYPE html>' + self.browser.page_source
+        try: return '<!DOCTYPE html>\n' + self.browser.page_source
         except: return
 #        try: return self.exec_script(GET_SOURCE)
 #        except Exception as e: 

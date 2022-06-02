@@ -25,7 +25,7 @@ class CrossVersion(Thread):
 
         self.helper = helper
         self.saveshot = False
-        self.fnr = False
+        self.fnr = True
 
     def report_mode(self) -> None:
         self.saveshot = True
@@ -47,10 +47,10 @@ class CrossVersion(Thread):
         for br in self.__br_list: br.kill_browser()
         self.__br_list.clear()
 
-    def cross_version_test_html(self, html_file: str, fn_reduction: bool = False) -> Optional[list]:
+    def cross_version_test_html(self, html_file: str) -> Optional[list]:
         img_hashes = []
         for br in self.__br_list:
-            hash_v = br.get_hash_from_html(html_file, self.saveshot, fn_reduction)
+            hash_v = br.get_hash_from_html(html_file, self.saveshot, self.fnr)
             if not hash_v: 
                 print ('something wrong?')
                 return
@@ -83,7 +83,12 @@ class CrossVersion(Thread):
                     continue
 
 
-            hashes = self.cross_version_test_html(html_file, self.fnr)
+            hashes = self.cross_version_test_html(html_file)
+            for _ in range(4):
+                if not self.is_bug(hashes):
+                    break
+                hashes = self.cross_version_test_html(html_file)
+
             if self.is_bug(hashes):
                 hpr.update_postq(vers, html_file, hashes)
 
@@ -95,11 +100,14 @@ class Oracle(Thread):
         super().__init__()
         self.helper = helper
         self.ref_br = None
+        self.ref_br_type = 'firefox'
+
         self.saveshot = False
+        self.fnr = True
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
-        self.ref_br = Browser('firefox', ver)
+        self.ref_br = Browser(self.ref_br_type, ver)
         return self.ref_br.setup_browser()
 
     def stop_ref_browser(self):
@@ -132,11 +140,18 @@ class Oracle(Thread):
                 if not self.start_ref_browser(cur_refv):
                     continue
 
-            ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, True)
+            ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, self.fnr)
             if ref_hash and self.is_regression(hashes, ref_hash):
                 hpr.update_postq(vers, html_file, hashes)
 
         self.stop_ref_browser()
+
+class ChromeOracle(Oracle):
+    def __init__(self, helper: IOQueue) -> None:
+        super().__init__(helper)
+
+        self.ref_br_type = 'chrome'
+        self.fnr = True
 
 
 class Bisecter(Thread):
@@ -358,7 +373,7 @@ class Minimizer(CrossVersion):
         attrs = br.exec_script(GET_ATTRNAMES)
         if not attrs: return
 
-        for i in range(len(attrs) - 1, 0, -1):
+        for i in reversed(range(len(attrs))):
             br.run_html(self.__temp_file)
             br.exec_script(f'document.body.querySelectorAll(\'*\')[{i}].remove();')
 
@@ -385,10 +400,47 @@ class Minimizer(CrossVersion):
                         self.__min_html = text
                         FileManager.write_file(self.__temp_file, self.__min_html)
 
+    def __minimize_line(self):
+        self.__in_html = self.__min_html.split('\n')
+        in_html_num_lines = len(self.__in_html)
+        self.__min_indices = range(in_html_num_lines) 
+
+#        self.__min_html = '\n'.join(self.__min_html)
+
+        try_indices = []
+        for i, line in enumerate(self.__in_html):
+            try_indices.append(i)
+
+        trim_sizes = [ pow(2, i) for i in range(7,-1,-1) ] # 128,64,32,16,8,4,2,1
+        trim_sizes = [x for x in trim_sizes if x < in_html_num_lines]
+
+        for trim_size in trim_sizes:
+            for offset in range(1, len(try_indices), trim_size):
+                if try_indices[offset] not in self.__min_indices:
+                    continue
+
+                trim_range = range(offset, min(offset + trim_size, len(try_indices)))
+                trim_indices = [ try_indices[i] for i in trim_range ]
+
+                min_html = []
+                min_indices = []
+                for i, line in enumerate(self.__in_html):
+                    if i not in trim_indices and i in self.__min_indices:
+                        min_html.append(line + '\n')
+                        min_indices.append(i)
+                
+                min_html_str = ''.join(min_html)
+                FileManager.write_file(self.__trim_file, min_html_str)
+                hashes = self.cross_version_test_html(self.__trim_file) 
+                if self.is_bug(hashes):
+                    self.__min_html = min_html_str
+                    self.__min_indices = min_indices
+                    FileManager.write_file(self.__temp_file, self.__min_html)
 
     def __minimizing(self):
-        self.__minimize_dom()
+        self.__minimize_line()
         self.__minimize_style()
+        self.__minimize_dom()
 
 
     def run(self) -> None:
@@ -411,11 +463,15 @@ class Minimizer(CrossVersion):
             if self.__initial_test(html_file):
                 self.__minimizing()
 
-                hashes = self.cross_version_test_html(self.__temp_file, True)
-                #print ('after', hashes[0] - hashes[1])
-                min_html_file = os.path.splitext(html_file)[0] + '-min.html'
-                copyfile(self.__temp_file, min_html_file)
+                hashes = self.cross_version_test_html(self.__temp_file)
+                for _ in range(3):
+                    if not self.is_bug(hashes): 
+                        break
+                    hashes = self.cross_version_test_html(self.__temp_file)
+
                 if self.is_bug(hashes):
+                    min_html_file = os.path.splitext(html_file)[0] + '-min.html'
+                    copyfile(self.__temp_file, min_html_file)
                     hpr.update_postq(vers, min_html_file, hashes)
 
             self.__remove_temp_files()
@@ -438,10 +494,6 @@ class R2Z2:
         class_name = type(threads[-1]).__name__
         print (f'{class_name} stage starts...')
 
-        dirname = class_name if not report else 'Report'
-
-            
-
         for th in threads:
             if report: th.report_mode()
             th.start()
@@ -449,11 +501,12 @@ class R2Z2:
         for th in threads:
             th.join()
 
-        dir_path = os.path.join(self.out_dir, dirname)
-        if not report:
-            self.ioq.dump_queue(dir_path)
-        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
         self.ioq.move_to_preqs()
+        if not report:
+            dirname = class_name
+            dir_path = os.path.join(self.out_dir, dirname)
+            self.ioq.dump_queue(dir_path)
+            self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
 
     def process(self) -> None:
@@ -468,7 +521,9 @@ class R2Z2:
         for test in tester: 
             self.test_wrapper(test)
 
-        self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
+        dir_path = os.path.join(self.out_dir, 'Result')
+        self.ioq.dump_queue_with_sort(dir_path)
+        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
         report = [
                 CrossVersion,
@@ -506,6 +561,7 @@ class Finder(R2Z2):
                 hpr.update_postq(vers, html_file, hashes)
 
         ref_br.kill_browser()
+        self.ioq.move_to_preqs()
         dir_path = os.path.join(self.out_dir, 'answer')
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
@@ -522,7 +578,9 @@ class Finder(R2Z2):
         for test in tester: 
             self.test_wrapper(test)
 
-        self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
+        dir_path = os.path.join(self.out_dir, 'Result')
+        self.ioq.dump_queue_with_sort(dir_path)
+        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
         report = [
                 CrossVersion,
@@ -532,3 +590,20 @@ class Finder(R2Z2):
             self.test_wrapper(test, True)
 
         self.answer()
+
+class ChromeRegression(R2Z2):
+    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int) -> None:
+        super().__init__(input_version_pair, output_dir, num_of_threads)
+
+
+    def process(self) -> None:
+        tester = [
+                CrossVersion,
+                ChromeOracle,
+                Bisecter,
+        ]
+
+        for test in tester: 
+            self.test_wrapper(test)
+
+        self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))

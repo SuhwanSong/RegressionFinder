@@ -791,11 +791,20 @@ AHEM_FONT="""
 
 `;
   document.head.append(script_tag);
+  
+  if (!document.styleSheets || !document.styleSheets[0]) {
+    const style = document.createElement('style');
+    document.head.append(style);
+  }
 
   const sheet = document.styleSheets[0];
+  sheet.insertRule('* {font-family: Ahem;}');
+//  sheet.insertRule('* { font: 10px/10px Ahem; }');
+  sheet.insertRule('::-webkit-scrollbar {display:none;}');
+  sheet.insertRule('* {scrollbar-width: none;}');
+
 //  sheet.insertRule('* { font-family: Ahem; }');
 
-//  sheet.insertRule('* { font: 10px/10px Ahem; }');
 //  sheet.insertRule('body { overflow: hidden; }');
 
 //  var css = `* { font: 10px/10px Ahem;} body {overflow:hidden;}`,
