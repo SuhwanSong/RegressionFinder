@@ -62,8 +62,8 @@ class Browser:
             except Exception as e:
                 pass
 
-        WIDTH  = 1024
-        HEIGHT = 1024
+        WIDTH  = 800
+        HEIGHT = 600
         TIMEOUT = 10
 
         self.__set_viewport_size(WIDTH, HEIGHT)
@@ -113,28 +113,6 @@ class Browser:
             print ('Error in exec_script')
             return None
 
-    def false_negative_reduction(self, html_file):
-        try:
-            self.browser.get('file://' + abspath(html_file))
-        except Exception as e:
-            print ('Error in run_html')
-            #print ('run_html', e)
-            self.kill_browser()
-            self.setup_browser()
-            return False
-        self.exec_script(AHEM_FONT)
-        source = self.get_source()
-
-        #html_file = abspath(html_file) + '-fnr.html'
-        #FileManager.write_file(html_file, source)
-        #self.browser.get('file://' + html_file)
-        self.browser.get(f"data:text/html;charset=utf-8,{source}")
-
-        # invalidation bug trigger
-        self.exec_script('if (typeof trigger === "function") {trigger();}')
-        self.__num_of_run += 1
-        return True
-
     def run_html(self, html_file: str, fn_reduction: bool = False):
         try:
             self.browser.get('file://' + abspath(html_file))
@@ -146,6 +124,7 @@ class Browser:
             return False
         if fn_reduction: 
             self.exec_script(AHEM_FONT)
+            #self.exec_script('textarea { resize: none; border: 1px solid black; border-radius: 0;}')
         # invalidation bug trigger
         self.exec_script('if (typeof trigger === "function") {trigger();}')
         self.__num_of_run += 1

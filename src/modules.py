@@ -1,5 +1,7 @@
 import os
 import re
+import time
+from datetime import timedelta
 
 from driver import Browser
 from typing import Optional
@@ -52,7 +54,6 @@ class CrossVersion(Thread):
         for br in self.__br_list:
             hash_v = br.get_hash_from_html(html_file, self.saveshot, self.fnr)
             if not hash_v: 
-                print ('something wrong?')
                 return
 
             img_hashes.append(hash_v)
@@ -84,7 +85,7 @@ class CrossVersion(Thread):
 
 
             hashes = self.cross_version_test_html(html_file)
-            for _ in range(4):
+            for _ in range(1):
                 if not self.is_bug(hashes):
                     break
                 hashes = self.cross_version_test_html(html_file)
@@ -344,7 +345,7 @@ class Minimizer(CrossVersion):
         #print (style_lines)
 
         min_lines = style_lines
-        for i in range(len(style_lines) - 4):
+        for i in range(len(style_lines)):
             min_line = self.__minimize_sline(i, min_lines)
             min_lines[i] = min_line
 
@@ -485,7 +486,10 @@ class R2Z2:
         self.out_dir = output_dir
         self.num_of_threads = num_of_threads
 
+        self.experiment_result = {}
+
     def test_wrapper(self, test_class: object, report: bool = False) -> None:
+        start = time.time()
         threads = []
         for i in range(self.num_of_threads):
             threads.append(test_class(self.ioq))
@@ -500,6 +504,12 @@ class R2Z2:
 
         for th in threads:
             th.join()
+
+        end = time.time()
+        elapsed = end - start
+        elapsed_time = str(timedelta(seconds=elapsed))
+        print (elapsed_time)
+        self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
 
         self.ioq.move_to_preqs()
         if not report:
@@ -568,6 +578,7 @@ class Finder(R2Z2):
 
 
     def process(self) -> None:
+        start = time.time()
         tester = [
                 CrossVersion,
                 Minimizer,
@@ -582,14 +593,19 @@ class Finder(R2Z2):
         self.ioq.dump_queue_with_sort(dir_path)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
-        report = [
-                CrossVersion,
-        ]
+#        report = [
+#                CrossVersion,
+#        ]
+#
+#        for test in report: 
+#            self.test_wrapper(test, True)
 
-        for test in report: 
-            self.test_wrapper(test, True)
-
-        self.answer()
+#        self.answer()
+        end = time.time()
+        elapsed = end - start
+        elapsed_time = str(timedelta(seconds=elapsed))
+        self.experiment_result['TOTAL'] = [self.ioq.num_of_outputs, elapsed_time]
+        print (self.experiment_result)
 
 class ChromeRegression(R2Z2):
     def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int) -> None:
@@ -597,8 +613,10 @@ class ChromeRegression(R2Z2):
 
 
     def process(self) -> None:
+        start = time.time()
         tester = [
                 CrossVersion,
+                Minimizer,
                 ChromeOracle,
                 Bisecter,
         ]
@@ -607,3 +625,8 @@ class ChromeRegression(R2Z2):
             self.test_wrapper(test)
 
         self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
+        end = time.time()
+        elapsed = end - start
+        elapsed_time = str(timedelta(seconds=elapsed))
+        self.experiment_result['TOTAL'] = [self.ioq.num_of_outputs, elapsed_time]
+        print (self.experiment_result)

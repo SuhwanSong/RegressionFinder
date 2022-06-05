@@ -61,12 +61,4 @@ def main():
     Finder(input_version_pair, output_dir, num_of_threads, answer).process()
 
 if __name__ == "__main__":
-    import time
-
-    start = time.time()
     main()
-    end = time.time()
-    elapsed = end - start
-    from datetime import timedelta
-    elapsed_time = str(timedelta(seconds=elapsed))
-    print (elapsed_time)

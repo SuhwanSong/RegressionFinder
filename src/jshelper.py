@@ -799,20 +799,23 @@ AHEM_FONT="""
 
   const sheet = document.styleSheets[0];
   sheet.insertRule('* {font-family: Ahem;}');
-//  sheet.insertRule('* { font: 10px/10px Ahem; }');
+  //sheet.insertRule('* { font: 10px/10px Ahem; }');
   sheet.insertRule('::-webkit-scrollbar {display:none;}');
   sheet.insertRule('* {scrollbar-width: none;}');
-
-//  sheet.insertRule('* { font-family: Ahem; }');
-
-//  sheet.insertRule('body { overflow: hidden; }');
-
-//  var css = `* { font: 10px/10px Ahem;} body {overflow:hidden;}`,
-//  head = document.head,
-//  style = document.createElement('style');
-//  head.append(style);
-//  style.appendChild(document.createTextNode(css));
+  //sheet.insertRule('textarea { resize: none; border: 1px solid black; border-radius: 0;}');
 """
+#
+#def insert_rule(css):
+#  return f"""if (!document.styleSheets || !document.styleSheets[0]) {
+#    const style = document.createElement('style');
+#    document.head.append(style);
+#  }
+#
+#  const sheet = document.styleSheets[0];
+#  sheet.insertRule('{css}');
+#  """
+
+
 
 GET_ATTRNAMES="""
 let attrs = [];
