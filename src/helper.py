@@ -1,9 +1,10 @@
 import csv
-
+import numpy as np
 from os import walk
 from os.path import join, dirname, abspath, exists
 
 from PIL import Image
+from PIL import ImageChops
 from io import BytesIO
 from imagehash import phash
 
@@ -241,7 +242,16 @@ class ImageDiff:
         with Image.open(stream, 'r') as image:
             hash_v = phash(image, hash_size = HASHSIZE)
             return hash_v
+#        stream = png if isinstance(png, str) else BytesIO(png)
+#        with Image.open(stream, 'r') as image:
+#            return np.asarray(image)
 
     def diff_images(hash_A, hash_B):
         THRE = 4 # 16
         return hash_A - hash_B  > THRE
+#        return not np.array_equal(hash_A, hash_B)
+
+
+    def same_images(hash_A, hash_B):
+        return hash_A == hash_B
+#        return np.array_equal(hash_A, hash_B)

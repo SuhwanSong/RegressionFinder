@@ -53,7 +53,7 @@ class CrossVersion(Thread):
         img_hashes = []
         for br in self.__br_list:
             hash_v = br.get_hash_from_html(html_file, self.saveshot, self.fnr)
-            if not hash_v: 
+            if hash_v is None: 
                 return
 
             img_hashes.append(hash_v)
@@ -61,7 +61,7 @@ class CrossVersion(Thread):
         return img_hashes
 
     def is_bug(self, hashes):
-        return  hashes and ImageDiff.diff_images(hashes[0], hashes[1])
+        return hashes and ImageDiff.diff_images(hashes[0], hashes[1])
 
     def run(self) -> None:
 
@@ -118,7 +118,7 @@ class Oracle(Thread):
 
     def is_regression(self, hashes: tuple, ref_hash) -> bool:
         #return hashes[0] != hashes[1] and hashes[0] == ref_hash
-        return hashes[0] == ref_hash
+        return ImageDiff.same_images(hashes[0], ref_hash)
 
 
     def run(self) -> None:
