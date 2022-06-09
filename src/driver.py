@@ -62,8 +62,8 @@ class Browser:
             except Exception as e:
                 pass
 
-        WIDTH  = 800
-        HEIGHT = 600
+        WIDTH  = 800 # 800
+        HEIGHT = 600 # 600
         TIMEOUT = 10
 
         self.__set_viewport_size(WIDTH, HEIGHT)
@@ -142,9 +142,9 @@ class Browser:
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
 
         hash_v = self.__screenshot_and_hash(screenshot_name)
-        if not hash_v: return
+        if hash_v is None: return
 
         for _ in range(2):
-            if hash_v != self.__screenshot_and_hash(screenshot_name):
+            if ImageDiff.diff_images(hash_v, self.__screenshot_and_hash(screenshot_name)):
                 return
         return hash_v

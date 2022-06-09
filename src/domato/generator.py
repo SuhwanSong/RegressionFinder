@@ -505,7 +505,7 @@ def main(index):
             os.mkdir(out_dir)
         outfiles = []
         for i in range(nsamples):
-            outfiles.append(os.path.join(out_dir, 'fuzz-' + str(i).zfill(7) + '.html'))
+            outfiles.append(os.path.join(out_dir, str(index) + '-' + str(i).zfill(7) + '.html'))
 
         generate_samples(fuzzer_dir, outfiles)
         

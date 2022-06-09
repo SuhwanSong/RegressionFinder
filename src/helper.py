@@ -1,8 +1,7 @@
 import csv
 import numpy as np
-from os import walk
-from os.path import join, dirname, abspath, exists
-
+from os import walk, getenv
+from os.path import join, dirname, abspath, exists, basename
 from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
@@ -116,7 +115,6 @@ class IOQueue:
         self.__queue_lock.release()
 
     def dump_queue(self, dir_path):
-        num = 0
         self.__queue_lock.acquire()
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         keys = self.__preqs.keys()
@@ -125,11 +123,10 @@ class IOQueue:
             length = q.qsize()
             for _ in range(length):
                 html_file, hashes = q.get()
-                name = 'id-' + str(num).zfill(6)
-                new_html_file = join(dir_path, f'{name}.html')
+                name = basename(html_file)
+                new_html_file = join(dir_path, name)
                 copyfile(html_file, new_html_file)
                 q.put((new_html_file, hashes))
-                num += 1
 
         self.__queue_lock.release()
 
@@ -155,18 +152,16 @@ class IOQueue:
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         keys = self.__preqs.keys()
         for vers in keys:
-            num = 0
             q = self.__preqs[vers]
             length = q.qsize()
             cur_path = join(dir_path, str(vers[1]))
             Path(cur_path).mkdir(parents=True, exist_ok=True)
             for _ in range(length):
                 html_file, hashes = q.get()
-                name = 'id-' + str(num).zfill(6)
-                new_html_file = join(cur_path, f'{name}.html')
+                name = basename(html_file)
+                new_html_file = join(cur_path, name)
                 copyfile(html_file, new_html_file)
                 q.put((new_html_file, hashes))
-                num += 1
 
         self.__queue_lock.release()
 
@@ -237,7 +232,8 @@ class Generator:
 
 class ImageDiff:
     def get_phash(png):
-        HASHSIZE = 16
+        hash_env = getenv('HASHSIZEV')
+        HASHSIZE = 64 if not hash_env else int(hash_env)
         stream = png if isinstance(png, str) else BytesIO(png)
         with Image.open(stream, 'r') as image:
             hash_v = phash(image, hash_size = HASHSIZE)
@@ -247,11 +243,8 @@ class ImageDiff:
 #            return np.asarray(image)
 
     def diff_images(hash_A, hash_B):
-        THRE = 4 # 16
+        thre_env = getenv('THREV')
+        THRE = 48 if not thre_env else int(thre_env)
         return hash_A - hash_B  > THRE
-#        return not np.array_equal(hash_A, hash_B)
+        #return not np.array_equal(hash_A, hash_B)
 
-
-    def same_images(hash_A, hash_B):
-        return hash_A == hash_B
-#        return np.array_equal(hash_A, hash_B)
