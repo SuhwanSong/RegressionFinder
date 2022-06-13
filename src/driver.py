@@ -19,13 +19,14 @@ class Browser:
                     '--headless',
                     '--disable-seccomp-sandbox --no-sandbox',
                     '--disable-logging',
-#                    '--disable-gpu'
+                    '--disable-gpu'
                     ]
             self.options = webdriver.chrome.options.Options()
 
         elif browser_type == 'firefox':
             options = [
-                    '--headless'
+                    '--headless',
+                    '--disable-gpu'
                     ]
             self.options = webdriver.firefox.options.Options()
 
@@ -133,7 +134,7 @@ class Browser:
             self.setup_browser()
         return True
 
-    def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
+    def _get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
         ret = self.run_html(html_file, fn_reduction)
         if not ret: return 
 
@@ -148,3 +149,11 @@ class Browser:
             if ImageDiff.diff_images(hash_v, self.__screenshot_and_hash(screenshot_name)):
                 return
         return hash_v
+
+    def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
+        hash_v = self._get_hash_from_html(html_file, save_shot, fn_reduction)
+        for _ in range(10):
+            if hash_v is None: return None
+            elif ImageDiff.diff_images(hash_v, self._get_hash_from_html(html_file, save_shot, fn_reduction)): return None
+        return hash_v
+

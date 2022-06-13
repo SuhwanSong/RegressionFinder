@@ -232,19 +232,19 @@ class Generator:
 
 class ImageDiff:
     def get_phash(png):
-        hash_env = getenv('HASHSIZEV')
-        HASHSIZE = 64 if not hash_env else int(hash_env)
-        stream = png if isinstance(png, str) else BytesIO(png)
-        with Image.open(stream, 'r') as image:
-            hash_v = phash(image, hash_size = HASHSIZE)
-            return hash_v
+#        hash_env = getenv('HASHSIZEV')
+#        HASHSIZE = 64 if not hash_env else int(hash_env)
 #        stream = png if isinstance(png, str) else BytesIO(png)
 #        with Image.open(stream, 'r') as image:
-#            return np.asarray(image)
+#            hash_v = phash(image, hash_size = HASHSIZE)
+#            return hash_v
+        stream = png if isinstance(png, str) else BytesIO(png)
+        with Image.open(stream, 'r') as image:
+            return np.asarray(image)
 
     def diff_images(hash_A, hash_B):
-        thre_env = getenv('THREV')
-        THRE = 48 if not thre_env else int(thre_env)
-        return hash_A - hash_B  > THRE
-        #return not np.array_equal(hash_A, hash_B)
+#        thre_env = getenv('THREV')
+#        THRE = 48 if not thre_env else int(thre_env)
+#        return hash_A - hash_B  > THRE
+        return not np.array_equal(hash_A, hash_B)
 

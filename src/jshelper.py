@@ -802,14 +802,13 @@ AHEM_FONT="""
   //sheet.insertRule('* { font: 10px/10px Ahem; }');
   sheet.insertRule('::-webkit-scrollbar {display:none;}');
   sheet.insertRule('* {scrollbar-width: none;}');
-//  sheet.insertRule('textarea { resize: none; border: 1px solid black; border-radius: 0;}'); 
+  //sheet.insertRule('textarea { resize: none; border: 1px solid black; border-radius: 0;}'); 
 
-//  var link = document.createElement('link');
-//  link.rel = 'stylesheet';
-//  link.type = 'text/css';
-//  link.href = '/tmp/normalize.css';
-//  //link.href = '/tmp/reset.css';
-//  document.head.append(link);
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = '/tmp/normalize.css';
+  document.head.prepend(link);
 """
 #
 #def insert_rule(css):

@@ -85,11 +85,6 @@ class CrossVersion(Thread):
 
 
             hashes = self.cross_version_test_html(html_file)
-            for _ in range(1):
-                if not self.is_bug(hashes):
-                    break
-                hashes = self.cross_version_test_html(html_file)
-
             if self.is_bug(hashes):
                 hpr.update_postq(vers, html_file, hashes)
 
@@ -106,6 +101,10 @@ class Oracle(Thread):
         self.saveshot = False
         self.fnr = True
 
+    def report_mode(self) -> None:
+        self.saveshot = True
+        self.fnr = True
+
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
         self.ref_br = Browser(self.ref_br_type, ver)
@@ -118,7 +117,8 @@ class Oracle(Thread):
 
     def is_regression(self, hashes: tuple, ref_hash) -> bool:
         #return hashes[0] != hashes[1] and hashes[0] == ref_hash
-        return ImageDiff.same_images(hashes[0], ref_hash)
+        #return ImageDiff.same_images(hashes[0], ref_hash)
+        return not ImageDiff.diff_images(hashes[0], ref_hash)
 
 
     def run(self) -> None:
@@ -142,7 +142,7 @@ class Oracle(Thread):
                     continue
 
             ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, self.fnr)
-            if ref_hash and self.is_regression(hashes, ref_hash):
+            if ref_hash is not None and self.is_regression(hashes, ref_hash):
                 hpr.update_postq(vers, html_file, hashes)
 
         self.stop_ref_browser()
@@ -152,7 +152,6 @@ class ChromeOracle(Oracle):
         super().__init__(helper)
 
         self.ref_br_type = 'chrome'
-        self.fnr = True
 
 
 class Bisecter(Thread):
@@ -220,13 +219,13 @@ class Bisecter(Thread):
                     continue
 
             ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, True)
-            if not ref_hash: continue
+            if ref_hash is None: continue
 
-            if hashes[0] == ref_hash:
+            if not ImageDiff.diff_images(hashes[0], ref_hash):
                 low = self.convert_to_ver(mid_idx + 1)
                 high = end
 
-            elif hashes[1] == ref_hash:
+            elif not ImageDiff.diff_images(hashes[1], ref_hash):
                 low = start
                 high = self.convert_to_ver(mid_idx - 1)
             else:
@@ -465,11 +464,6 @@ class Minimizer(CrossVersion):
                 self.__minimizing()
 
                 hashes = self.cross_version_test_html(self.__temp_file)
-                for _ in range(3):
-                    if not self.is_bug(hashes): 
-                        break
-                    hashes = self.cross_version_test_html(self.__temp_file)
-
                 if self.is_bug(hashes):
                     min_html_file = os.path.splitext(html_file)[0] + '-min.html'
                     copyfile(self.__temp_file, min_html_file)
@@ -509,7 +503,8 @@ class R2Z2:
         elapsed = end - start
         elapsed_time = str(timedelta(seconds=elapsed))
         print (elapsed_time)
-        self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
+        if not report:
+            self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
 
         self.ioq.move_to_preqs()
         if not report:
@@ -567,7 +562,9 @@ class Finder(R2Z2):
                 raise ValueError('Something wrong in hashes...')
 
             ref_hash = ref_br.get_hash_from_html(html_file, True, True)
-            if ref_hash and hashes[0] == ref_hash:
+            if ref_hash is None:
+                continue
+            if not ImageDiff.diff_images(hashes[0], ref_hash):
                 hpr.update_postq(vers, html_file, hashes)
 
         ref_br.kill_browser()
@@ -583,7 +580,7 @@ class Finder(R2Z2):
                 CrossVersion,
                 Minimizer,
                 Oracle,
-                Bisecter,
+        #        Bisecter,
         ]
 
         for test in tester: 
@@ -592,19 +589,20 @@ class Finder(R2Z2):
         dir_path = os.path.join(self.out_dir, 'Result')
         self.ioq.dump_queue_with_sort(dir_path)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
-
-#        report = [
-#                CrossVersion,
-#        ]
-#
-#        for test in report: 
-#            self.test_wrapper(test, True)
-
-#        self.answer()
         end = time.time()
         elapsed = end - start
         elapsed_time = str(timedelta(seconds=elapsed))
         self.experiment_result['TOTAL'] = [self.ioq.num_of_outputs, elapsed_time]
+
+        report = [
+                CrossVersion,
+                Oracle,
+        ]
+
+        for test in report: 
+            self.test_wrapper(test, True)
+
+        self.answer()
         print (self.experiment_result)
 
 class ChromeRegression(R2Z2):
@@ -618,7 +616,7 @@ class ChromeRegression(R2Z2):
                 CrossVersion,
                 Minimizer,
                 ChromeOracle,
-                Bisecter,
+        #        Bisecter,
         ]
 
         for test in tester: 
@@ -629,4 +627,11 @@ class ChromeRegression(R2Z2):
         elapsed = end - start
         elapsed_time = str(timedelta(seconds=elapsed))
         self.experiment_result['TOTAL'] = [self.ioq.num_of_outputs, elapsed_time]
+        report = [
+                CrossVersion,
+                ChromeOracle
+        ]
+
+        for test in report: 
+            self.test_wrapper(test, True)
         print (self.experiment_result)
