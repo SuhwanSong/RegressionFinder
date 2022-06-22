@@ -1,11 +1,12 @@
-from os import environ
+from os import environ, getenv
 from os.path import dirname, join, abspath, splitext
 
 from pathlib import Path
 from helper import ImageDiff
 from helper import FileManager
 
-from jshelper import AHEM_FONT
+from jshelper import AHEM_FONT, NOSCROLLBAR
+from jshelper import RESET, UNSET, NORM, FFAHEM, FAHEM, TEXTAREA 
 
 from selenium import webdriver
 
@@ -63,8 +64,10 @@ class Browser:
             except Exception as e:
                 pass
 
-        WIDTH  = 800 # 800
-        HEIGHT = 600 # 600
+        WIDTH = getenv('WIDTH')
+        WIDTH = 800 if not WIDTH else int(WIDTH)
+        HEIGHT = getenv('HEIGHT')
+        HEIGHT = 600 if not HEIGHT else int(HEIGHT)
         TIMEOUT = 10
 
         self.__set_viewport_size(WIDTH, HEIGHT)
@@ -111,7 +114,7 @@ class Browser:
         try:
             return self.browser.execute_script(scr, arg)
         except Exception as e:
-            print ('Error in exec_script')
+            #print ('Error in exec_script', e)
             return None
 
     def run_html(self, html_file: str, fn_reduction: bool = False):
@@ -124,9 +127,17 @@ class Browser:
             self.setup_browser()
             return False
         if fn_reduction: 
-            self.exec_script(AHEM_FONT)
-            #self.exec_script('textarea { resize: none; border: 1px solid black; border-radius: 0;}')
-        # invalidation bug trigger
+            self.exec_script(AHEM_FONT) # baseline
+            self.exec_script(NOSCROLLBAR) # baseline
+            self.exec_script(FFAHEM) # baseline
+
+#            self.exec_script(FAHEM)
+#            self.exec_script(TEXTAREA)
+#
+#            self.exec_script(RESET)
+            self.exec_script(NORM) # baseline
+#            self.exec_script(UNSET)
+       # invalidation bug trigger
         self.exec_script('if (typeof trigger === "function") {trigger();}')
         self.__num_of_run += 1
         if self.__num_of_run % 1000 == 0:
@@ -145,15 +156,15 @@ class Browser:
         hash_v = self.__screenshot_and_hash(screenshot_name)
         if hash_v is None: return
 
-        for _ in range(2):
+        for _ in range(1):
             if ImageDiff.diff_images(hash_v, self.__screenshot_and_hash(screenshot_name)):
                 return
         return hash_v
 
     def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
         hash_v = self._get_hash_from_html(html_file, save_shot, fn_reduction)
-        for _ in range(10):
-            if hash_v is None: return None
-            elif ImageDiff.diff_images(hash_v, self._get_hash_from_html(html_file, save_shot, fn_reduction)): return None
+#        for _ in range(1):
+#            if hash_v is None: return None
+#            elif ImageDiff.diff_images(hash_v, self._get_hash_from_html(html_file, save_shot, fn_reduction)): return None
         return hash_v
 

@@ -791,7 +791,44 @@ AHEM_FONT="""
 
 `;
   document.head.append(script_tag);
-  
+"""
+
+NOSCROLLBAR="""
+  if (!document.styleSheets || !document.styleSheets[0]) {
+    const style = document.createElement('style');
+    document.head.append(style);
+  }
+  const sheet = document.styleSheets[0];
+  sheet.insertRule('::-webkit-scrollbar {display:none;}');
+  sheet.insertRule('* {scrollbar-width: none;}');
+"""
+
+NORM="""
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = '/tmp/normalize.css';
+  document.head.prepend(link);
+"""
+
+UNSET="""
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = '/tmp/unset.css';
+  document.head.prepend(link);
+"""
+
+RESET="""
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = '/tmp/reset.css';
+  document.head.prepend(link);
+"""
+
+
+FFAHEM="""
   if (!document.styleSheets || !document.styleSheets[0]) {
     const style = document.createElement('style');
     document.head.append(style);
@@ -799,17 +836,27 @@ AHEM_FONT="""
 
   const sheet = document.styleSheets[0];
   sheet.insertRule('* {font-family: Ahem;}');
-  //sheet.insertRule('* { font: 10px/10px Ahem; }');
-  sheet.insertRule('::-webkit-scrollbar {display:none;}');
-  sheet.insertRule('* {scrollbar-width: none;}');
-  //sheet.insertRule('textarea { resize: none; border: 1px solid black; border-radius: 0;}'); 
-
-  var link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.type = 'text/css';
-  link.href = '/tmp/normalize.css';
-  document.head.prepend(link);
 """
+
+FAHEM="""
+  if (!document.styleSheets || !document.styleSheets[0]) {
+    const style = document.createElement('style');
+    document.head.append(style);
+  }
+
+  const sheet = document.styleSheets[0];
+  sheet.insertRule('* { font: 10px/10px Ahem; }');
+"""
+
+TEXTAREA="""
+  if (!document.styleSheets || !document.styleSheets[0]) {
+    const style = document.createElement('style');
+    document.head.append(style);
+  }
+  const sheet = document.styleSheets[0];
+  sheet.insertRule('textarea { resize: none; border: 1px solid black; border-radius: 0;}'); 
+"""
+
 #
 #def insert_rule(css):
 #  return f"""if (!document.styleSheets || !document.styleSheets[0]) {

@@ -29,6 +29,8 @@ class CrossVersion(Thread):
         self.saveshot = False
         self.fnr = True
 
+        self.limit = 10000
+
     def report_mode(self) -> None:
         self.saveshot = True
         self.fnr = True
@@ -60,6 +62,14 @@ class CrossVersion(Thread):
 
         return img_hashes
 
+    def cross_version_test_html_nth(self, html_file: str) -> Optional[list]:
+        hashes = self.cross_version_test_html(html_file)
+        for _ in range(3):
+            if not self.is_bug(hashes):
+                return 
+            hashes = self.cross_version_test_html(html_file)
+        return hashes
+
     def is_bug(self, hashes):
         return hashes and ImageDiff.diff_images(hashes[0], hashes[1])
 
@@ -84,9 +94,12 @@ class CrossVersion(Thread):
                     continue
 
 
-            hashes = self.cross_version_test_html(html_file)
-            if self.is_bug(hashes):
-                hpr.update_postq(vers, html_file, hashes)
+            hashes = self.cross_version_test_html_nth(html_file)
+            if self.is_bug(hashes): 
+                if hpr.num_of_outputs < self.limit:
+                    hpr.update_postq(vers, html_file, hashes)
+                else:
+                    break
 
         self.stop_browsers()
 
@@ -280,7 +293,7 @@ class Minimizer(CrossVersion):
         copyfile(html_file, self.__temp_file)
 
         self.__min_html = FileManager.read_file(html_file)
-        hashes = self.cross_version_test_html(html_file) 
+        hashes = self.cross_version_test_html_nth(html_file) 
         return self.is_bug(hashes)
 
 
@@ -329,7 +342,7 @@ class Minimizer(CrossVersion):
 
                 FileManager.write_file(self.__trim_file, tmp_html)
 
-                hashes = self.cross_version_test_html(self.__trim_file)
+                hashes = self.cross_version_test_html_nth(self.__trim_file)
                 if self.is_bug(hashes):
                     min_blocks = tmp_blocks
                     min_indices = tmp_indices
@@ -380,7 +393,7 @@ class Minimizer(CrossVersion):
             text = br.get_source()
             if not text: continue
             FileManager.write_file(self.__trim_file, text)
-            hashes = self.cross_version_test_html(self.__trim_file) 
+            hashes = self.cross_version_test_html_nth(self.__trim_file) 
             if self.is_bug(hashes):
                 #print (f'{i}th element is removed')
                 self.__min_html = text
@@ -394,7 +407,7 @@ class Minimizer(CrossVersion):
                     text = br.get_source()
                     if not text: continue
                     FileManager.write_file(self.__trim_file, text)
-                    hashes = self.cross_version_test_html(self.__trim_file) 
+                    hashes = self.cross_version_test_html_nth(self.__trim_file) 
                     if self.is_bug(hashes):
                         #print (f'{attr} attr is removed')
                         self.__min_html = text
@@ -431,7 +444,7 @@ class Minimizer(CrossVersion):
                 
                 min_html_str = ''.join(min_html)
                 FileManager.write_file(self.__trim_file, min_html_str)
-                hashes = self.cross_version_test_html(self.__trim_file) 
+                hashes = self.cross_version_test_html_nth(self.__trim_file) 
                 if self.is_bug(hashes):
                     self.__min_html = min_html_str
                     self.__min_indices = min_indices
@@ -462,8 +475,8 @@ class Minimizer(CrossVersion):
 
             if self.__initial_test(html_file):
                 self.__minimizing()
-
-                hashes = self.cross_version_test_html(self.__temp_file)
+  
+                hashes = self.cross_version_test_html_nth(self.__temp_file)
                 if self.is_bug(hashes):
                     min_html_file = os.path.splitext(html_file)[0] + '-min.html'
                     copyfile(self.__temp_file, min_html_file)
@@ -502,10 +515,10 @@ class R2Z2:
         end = time.time()
         elapsed = end - start
         elapsed_time = str(timedelta(seconds=elapsed))
+        print (f'{class_name} stage ends...')
         print (elapsed_time)
         if not report:
             self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
-
         self.ioq.move_to_preqs()
         if not report:
             dirname = class_name
@@ -578,9 +591,9 @@ class Finder(R2Z2):
         start = time.time()
         tester = [
                 CrossVersion,
-                Minimizer,
+        #        Minimizer,
                 Oracle,
-        #        Bisecter,
+                Bisecter,
         ]
 
         for test in tester: 
@@ -602,7 +615,7 @@ class Finder(R2Z2):
         for test in report: 
             self.test_wrapper(test, True)
 
-        self.answer()
+        #self.answer()
         print (self.experiment_result)
 
 class ChromeRegression(R2Z2):
@@ -614,9 +627,9 @@ class ChromeRegression(R2Z2):
         start = time.time()
         tester = [
                 CrossVersion,
-                Minimizer,
+        #        Minimizer,
                 ChromeOracle,
-        #        Bisecter,
+                Bisecter,
         ]
 
         for test in tester: 
@@ -635,3 +648,53 @@ class ChromeRegression(R2Z2):
         for test in report: 
             self.test_wrapper(test, True)
         print (self.experiment_result)
+
+
+class Preprocesser:
+    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int) -> None:
+        self.ioq = IOQueue(input_version_pair)
+        self.out_dir = output_dir
+        self.num_of_threads = num_of_threads
+
+        self.experiment_result = {}
+
+    def test_wrapper(self, test_class: object, report: bool = False) -> None:
+        start = time.time()
+        threads = []
+        for i in range(self.num_of_threads):
+            threads.append(test_class(self.ioq))
+            threads[-1].saveshot = report
+
+        class_name = type(threads[-1]).__name__
+        print (f'{class_name} stage starts...')
+
+        for th in threads:
+            if report: th.report_mode()
+            th.start()
+
+        for th in threads:
+            th.join()
+
+        end = time.time()
+        elapsed = end - start
+        elapsed_time = str(timedelta(seconds=elapsed))
+        print (f'{class_name} stage ends...')
+        print (elapsed_time)
+        if not report:
+            self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
+        self.ioq.move_to_preqs()
+        if not report:
+            dirname = class_name
+            dir_path = os.path.join(self.out_dir, dirname)
+            self.ioq.dump_queue(dir_path)
+            self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
+
+
+    def process(self) -> None:
+        tester = [
+                CrossVersion,
+                Minimizer,
+        ]
+
+        for test in tester: 
+            self.test_wrapper(test)

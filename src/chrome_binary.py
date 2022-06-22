@@ -46,9 +46,11 @@ def download_chromium_position(position):
     if not ret:
         print("[-] No pre-built binary :(")
         return 1
-   
-    os.system(f"unzip {name} &> /dev/null")
-    os.system(f"mv chrome-linux {position} &> /dev/null")
+
+    outdir = f"/tmp/{position}"
+    os.system(f"mkdir -p {outdir}")
+    os.system(f"unzip {name} -d {outdir} &> /dev/null")
+    os.system(f"mv {outdir}/chrome-linux {position} &> /dev/null")
     os.system(f"rm -rf {name} &> /dev/null")
 
     url = get_chromium_driver_download_url(position)
@@ -62,14 +64,15 @@ def download_chromium_position(position):
         print("[-] No pre-built binary :(")
         return 1
 
-    os.system(f"unzip {name} &> /dev/null")
-    os.system(f"mv chromedriver_linux64/chromedriver {position} &> /dev/null")
+    os.system(f"unzip {name} -d {outdir} &> /dev/null")
+    os.system(f"mv {outdir}/chromedriver_linux64/chromedriver {position} &> /dev/null")
     os.system(f"rm -rf chromedriver_linux64 {name} &> /dev/null")
+    os.system(f"rm -rf {outdir}")
     
     return 0
 
 def get_commit_from_position(position):
-    URL = 'https://crrev.com/' + position
+    URL = 'https://crrev.com/' + str(position)
     response = requests.get(URL)
     if response.status_code == 404:
         print(response.status_code)

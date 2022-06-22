@@ -62,7 +62,9 @@ class IOQueue:
 
     def __select_vers(self) -> Optional[tuple[int, int, int]]:
         keys = list(self.__preqs.keys())
-        return choice(keys) if keys else None
+        key =  choice(keys) if keys else None
+        return key
+
 
     def insert_to_queue(self, vers: tuple[int, int, int], html_file: str, hashes: tuple) -> None:
         self.__queue_lock.acquire()
@@ -74,10 +76,12 @@ class IOQueue:
         self.__queue_lock.release()
 
     def pop_from_queue(self) -> Optional[list]:
-        if not self.__vers: return
 
         value = None
         self.__queue_lock.acquire()
+        if not self.__vers: 
+            self.__queue_lock.release()
+            return
 
         vers = self.__vers
         value = self.__preqs[vers].get()
@@ -232,19 +236,10 @@ class Generator:
 
 class ImageDiff:
     def get_phash(png):
-#        hash_env = getenv('HASHSIZEV')
-#        HASHSIZE = 64 if not hash_env else int(hash_env)
-#        stream = png if isinstance(png, str) else BytesIO(png)
-#        with Image.open(stream, 'r') as image:
-#            hash_v = phash(image, hash_size = HASHSIZE)
-#            return hash_v
         stream = png if isinstance(png, str) else BytesIO(png)
         with Image.open(stream, 'r') as image:
             return np.asarray(image)
 
     def diff_images(hash_A, hash_B):
-#        thre_env = getenv('THREV')
-#        THRE = 48 if not thre_env else int(thre_env)
-#        return hash_A - hash_B  > THRE
         return not np.array_equal(hash_A, hash_B)
 
