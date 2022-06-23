@@ -29,7 +29,7 @@ class CrossVersion(Thread):
         self.saveshot = False
         self.fnr = True
 
-        self.limit = 10000
+        self.limit = 2000
 
     def report_mode(self) -> None:
         self.saveshot = True
@@ -173,6 +173,7 @@ class Bisecter(Thread):
         self.helper = helper
         self.ref_br = None
         self.__version_list = []
+        self.__index_hash = {}
         self.saveshot = False
 
     def start_ref_browser(self, ver: int) -> bool:
@@ -187,12 +188,16 @@ class Bisecter(Thread):
 
     def set_version_list(self) -> None:
         self.__version_list = FileManager.get_bisect_csv()
+        self.__index_hash.clear()
+        for idx, ver in enumerate(self.__version_list):
+          self.__index_hash[ver] = idx
 
     def convert_to_ver(self, index: int) -> int:
         return self.__version_list[index]
 
     def convert_to_index(self, ver: int) -> int:
-        return bisect(self.__version_list, ver) 
+        #return bisect(self.__version_list, ver) 
+        return self.__index_hash[ver]
 
     def get_chrome(self, ver: int) -> None:
         self.helper.download_chrome(ver)
@@ -204,17 +209,22 @@ class Bisecter(Thread):
 
         while True:
             vers = hpr.get_vers()
-            if not vers: break
+            if not vers: 
+                break
+            print (vers)
 
             result = hpr.pop_from_queue()
-            if not result: break
+            if not result: 
+                break
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
 
             start, end, ref = vers
-            if start >= end: continue
+            if start >= end: 
+                print (html_file, 'start and end are the same;')
+                continue
 
             start_idx = self.convert_to_index(start)
             end_idx = self.convert_to_index(end)
@@ -232,13 +242,21 @@ class Bisecter(Thread):
                     continue
 
             ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, True)
-            if ref_hash is None: continue
+            if ref_hash is None: 
+                print (html_file, 'is wrong with image;')
+                continue
 
             if not ImageDiff.diff_images(hashes[0], ref_hash):
+                if mid_idx + 1 == end_idx:
+                    hpr.update_postq((mid, end, ref), html_file, hashes)
+                    continue
                 low = self.convert_to_ver(mid_idx + 1)
                 high = end
 
             elif not ImageDiff.diff_images(hashes[1], ref_hash):
+                if mid_idx - 1 == start_idx:
+                    hpr.update_postq((start, mid, ref), html_file, hashes)
+                    continue
                 low = start
                 high = self.convert_to_ver(mid_idx - 1)
             else:

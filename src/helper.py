@@ -40,13 +40,15 @@ class IOQueue:
 
     def download_chrome(self, commit_version: int) -> None:
         browser_type = 'chrome'
-        self.__build_lock.acquire()
+        #self.__build_lock.acquire()
+        self.__queue_lock.acquire()
         parent_dir = FileManager.get_parent_dir(__file__)
         browser_dir = join(parent_dir, browser_type)
         browser_path = join(browser_dir, str(commit_version), browser_type)
         if not exists(browser_path):
             download_chrome_binary(browser_dir, commit_version)
-        self.__build_lock.release()
+        #self.__build_lock.release()
+        self.__queue_lock.release()
 
     def build_chrome(self, commit_version: int) -> None:
         browser_type = 'chrome'
@@ -243,3 +245,32 @@ class ImageDiff:
     def diff_images(hash_A, hash_B):
         return not np.array_equal(hash_A, hash_B)
 
+
+MILESTONE = {
+    79: 706915,
+    80: 722274,
+    81: 737173,
+    82: 749737,
+    83: 756066,
+    84: 768962,
+    85: 782793,
+    86: 800218,
+    87: 812852,
+    88: 827102,
+    89: 843830,
+    90: 857950,
+    91: 870763,
+    92: 885287,
+    93: 902210,
+    94: 911515,
+    95: 920003,
+    96: 929512,
+    97: 938553,
+    98: 950365,
+    99: 961656,
+    100: 972766,
+    101: 982481,
+    102: 992738,
+    103:1002911,
+    104:1006827
+}

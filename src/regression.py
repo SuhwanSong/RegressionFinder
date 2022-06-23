@@ -2,6 +2,7 @@ import argparse
 
 from random import seed
 from helper import FileManager
+from helper import MILESTONE
 
 from modules import ChromeRegression
 
@@ -21,25 +22,7 @@ def main():
     inputs = FileManager.get_all_files(args.input, '.html')
     print ('# of initial inputs: ', len(inputs))
     versions = FileManager.get_bisect_csv()
-    milestone = {
-            88: 827102,
-            89: 843830,
-            90: 857950,
-            91: 870763,
-            92: 885287,
-            93: 902210,
-            94: 911515,
-            95: 920003,
-            96: 929512,
-            97: 938553,
-            98: 950365,
-            99: 961656,
-           100: 972766,
-           101: 982481,
-           102: 992738,
-           103:1002911,
-           104:1006827
-    }
+    milestone = MILESTONE
 
     import bisect
 
