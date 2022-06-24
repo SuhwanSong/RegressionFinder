@@ -793,6 +793,24 @@ AHEM_FONT="""
   document.head.append(script_tag);
 """
 
+
+ALLSET="""
+  if (!document.styleSheets || !document.styleSheets[0]) {
+    const style = document.createElement('style');
+    document.head.append(style);
+  }
+  const sheet = document.styleSheets[0];
+  sheet.insertRule('::-webkit-scrollbar {display:none;}');
+  sheet.insertRule('* {scrollbar-width: none;}');
+  sheet.insertRule('* {font-family: Ahem;}');
+
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = '/tmp/normalize.css';
+  document.head.prepend(link);
+"""
+
 NOSCROLLBAR="""
   if (!document.styleSheets || !document.styleSheets[0]) {
     const style = document.createElement('style');

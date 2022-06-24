@@ -246,6 +246,14 @@ class ImageDiff:
         return not np.array_equal(hash_A, hash_B)
 
 
+    def save_image(name, png):
+        stream = BytesIO(png)
+        im = Image.open(stream, 'r')
+        im.save(name)
+        im.close()
+        
+
+
 MILESTONE = {
     79: 706915,
     80: 722274,

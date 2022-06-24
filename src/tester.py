@@ -51,6 +51,7 @@ def main():
             input_version_pair[inp] = vers
         Preprocesser(input_version_pair, output_dir, num_of_threads).process()
 
+
     input_version_pair = {}
     inputs = FileManager.get_all_files(min_dir, '.html')
     print ('# of initial inputs: ', len(inputs))

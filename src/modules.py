@@ -29,7 +29,7 @@ class CrossVersion(Thread):
         self.saveshot = False
         self.fnr = True
 
-        self.limit = 2000
+        self.limit = 10000
 
     def report_mode(self) -> None:
         self.saveshot = True
@@ -48,7 +48,11 @@ class CrossVersion(Thread):
         return True
 
     def stop_browsers(self) -> None:
-        for br in self.__br_list: br.kill_browser()
+        for br in self.__br_list: 
+            print (br.time)
+            print (br.count)
+            print (br.flak)
+            br.kill_browser()
         self.__br_list.clear()
 
     def cross_version_test_html(self, html_file: str) -> Optional[list]:
@@ -64,7 +68,7 @@ class CrossVersion(Thread):
 
     def cross_version_test_html_nth(self, html_file: str) -> Optional[list]:
         hashes = self.cross_version_test_html(html_file)
-        for _ in range(3):
+        for _ in range(0):
             if not self.is_bug(hashes):
                 return 
             hashes = self.cross_version_test_html(html_file)
@@ -74,7 +78,7 @@ class CrossVersion(Thread):
         return hashes and ImageDiff.diff_images(hashes[0], hashes[1])
 
     def run(self) -> None:
-
+        start = time.time()
         cur_vers = None
         hpr = self.helper
         while True:
@@ -102,6 +106,7 @@ class CrossVersion(Thread):
                     break
 
         self.stop_browsers()
+        print ('total', time.time() - start)
 
 
 class Oracle(Thread):
@@ -229,9 +234,10 @@ class Bisecter(Thread):
             start_idx = self.convert_to_index(start)
             end_idx = self.convert_to_index(end)
 
-            if end_idx - start_idx == 1:
-                hpr.update_postq(vers, html_file, hashes)
-                continue
+#            if end_idx - start_idx == 1:
+#                hpr.update_postq(vers, html_file, hashes)
+#                print (html_file, start, end, 'postq')
+#                continue
 
             mid_idx = (start_idx + end_idx) // 2
             mid = self.convert_to_ver(mid_idx)
@@ -246,24 +252,44 @@ class Bisecter(Thread):
                 print (html_file, 'is wrong with image;')
                 continue
 
+            if not ImageDiff.diff_images(hashes[0], ref_hash) and not ImageDiff.diff_images(hashes[1], ref_hash):
+                print (html_file, 'pixels are same -- ')
+
             if not ImageDiff.diff_images(hashes[0], ref_hash):
                 if mid_idx + 1 == end_idx:
                     hpr.update_postq((mid, end, ref), html_file, hashes)
+                    print (html_file, mid, end, 'postq 1')
                     continue
-                low = self.convert_to_ver(mid_idx + 1)
+                low = self.convert_to_ver(mid_idx)
                 high = end
 
             elif not ImageDiff.diff_images(hashes[1], ref_hash):
                 if mid_idx - 1 == start_idx:
                     hpr.update_postq((start, mid, ref), html_file, hashes)
+                    print (html_file, start, mid, 'postq 2')
                     continue
                 low = start
-                high = self.convert_to_ver(mid_idx - 1)
+                high = self.convert_to_ver(mid_idx)
             else:
                 print (html_file, 'is skipped;')
                 continue
-
             hpr.insert_to_queue((low, high, ref), html_file, hashes)
+
+#            if ImageDiff.diff_images(hashes[0], ref_hash):
+#                if mid_idx - 1 == start_idx:
+#                    hpr.update_postq((start, mid, ref), html_file, hashes)
+#                    continue
+#                low = start
+#                high = self.convert_to_ver(mid_idx - 1)
+#                hpr.insert_to_queue((low, high, ref), html_file, hashes)
+#            if ImageDiff.diff_images(hashes[1], ref_hash):
+#                if mid_idx + 1 == end_idx:
+#                    hpr.update_postq((mid, end, ref), html_file, hashes)
+#                    continue
+#                low = self.convert_to_ver(mid_idx + 1)
+#                high = end
+#                hpr.insert_to_queue((low, high, ref), html_file, hashes)
+
 
         self.stop_ref_browser()
 
@@ -524,7 +550,6 @@ class R2Z2:
         print (f'{class_name} stage starts...')
 
         for th in threads:
-            if report: th.report_mode()
             th.start()
 
         for th in threads:
@@ -541,7 +566,7 @@ class R2Z2:
         if not report:
             dirname = class_name
             dir_path = os.path.join(self.out_dir, dirname)
-            self.ioq.dump_queue(dir_path)
+            self.ioq.dump_queue_with_sort(dir_path)
             self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
 
@@ -557,9 +582,9 @@ class R2Z2:
         for test in tester: 
             self.test_wrapper(test)
 
-        dir_path = os.path.join(self.out_dir, 'Result')
-        self.ioq.dump_queue_with_sort(dir_path)
-        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
+#        dir_path = os.path.join(self.out_dir, 'Result')
+#        self.ioq.dump_queue_with_sort(dir_path)
+#        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
         report = [
                 CrossVersion,
@@ -617,9 +642,6 @@ class Finder(R2Z2):
         for test in tester: 
             self.test_wrapper(test)
 
-        dir_path = os.path.join(self.out_dir, 'Result')
-        self.ioq.dump_queue_with_sort(dir_path)
-        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
         end = time.time()
         elapsed = end - start
         elapsed_time = str(timedelta(seconds=elapsed))
@@ -633,7 +655,7 @@ class Finder(R2Z2):
         for test in report: 
             self.test_wrapper(test, True)
 
-        #self.answer()
+        self.answer()
         print (self.experiment_result)
 
 class ChromeRegression(R2Z2):
@@ -687,7 +709,6 @@ class Preprocesser:
         print (f'{class_name} stage starts...')
 
         for th in threads:
-            if report: th.report_mode()
             th.start()
 
         for th in threads:
