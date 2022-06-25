@@ -235,22 +235,6 @@ class Generator:
                 None)
 
 
-#class ImageDiff:
-#    def get_phash(png):
-#        stream = png if isinstance(png, str) else BytesIO(png)
-#        with Image.open(stream, 'r') as image:
-#            return np.asarray(image)
-#
-#    def diff_images(hash_A, hash_B):
-#        return not np.array_equal(hash_A, hash_B)
-#
-#
-#    def save_image(name, png):
-#        stream = BytesIO(png)
-#        im = Image.open(stream, 'r')
-#        im.save(name)
-#        im.close()
-        
 class ImageDiff:
     def get_phash(png):
         return png

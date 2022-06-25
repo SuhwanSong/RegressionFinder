@@ -140,7 +140,6 @@ class Browser:
             s1 = time.time()
             self.exec_script(AHEM_FONT) # baseline
             self.exec_script(ALLSET) # baseline
-       # invalidation bug trigger
             self.time['SCRIPT'] += time.time() - s1
         self.time['runhtml'] += time.time() - start
         self.count['runhtml'] += 1
@@ -151,12 +150,10 @@ class Browser:
         ret = self.run_html(html_file, fn_reduction)
         if not ret: return 
 
-        #save_shot = True
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
-        bad = False
         hash_v = self.__screenshot_and_hash(screenshot_name)
-        for _ in range(1):
+        for _ in range(0):
             if ImageDiff.diff_images(hash_v, self.__screenshot_and_hash(screenshot_name)):
                 self.flak['BAD'] += 1
                 return
@@ -165,7 +162,7 @@ class Browser:
 
     def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
         hash_v = self._get_hash_from_html(html_file, save_shot, fn_reduction)
-        for _ in range(1):
+        for _ in range(0):
             if hash_v is None: 
                 self.flak['BAD HTML'] += 1
                 print ('bad', html_file)
