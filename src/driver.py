@@ -50,6 +50,7 @@ class Browser:
         self.time = defaultdict(float)
         self.count = defaultdict(int)
         self.flak = defaultdict(int)
+
     def setup_browser(self):
         self.__num_of_run = 0
         start = time.time()
@@ -79,7 +80,6 @@ class Browser:
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
         self.time['setup'] += time.time() - start
-        #print (f'{self.__browser_type} {self.version} starts ...')
         return True
 
 
@@ -94,8 +94,6 @@ class Browser:
         try:
             start = time.time()
             if name:
-                #self.browser.save_screenshot(name)
-                #png = name
                 png = self.browser.get_screenshot_as_png()
                 ImageDiff.save_image(name, png)
 
@@ -110,7 +108,6 @@ class Browser:
             self.count['convertscreenshot'] += 1
             return pixels
         except Exception as e:
-            #print('screenshot_and_hash', e)
             return
 
     def kill_browser(self):
@@ -120,25 +117,22 @@ class Browser:
     def get_source(self):
         try: return '<!DOCTYPE html>\n' + self.browser.page_source
         except: return
-#        try: return self.exec_script(GET_SOURCE)
-#        except Exception as e: 
-#            print (e)
-#            return 
 
     def exec_script(self, scr, arg=None):
         try:
             return self.browser.execute_script(scr, arg)
         except Exception as e:
-            #print ('Error in exec_script', e)
             return None
 
     def run_html(self, html_file: str, fn_reduction: bool = False):
         start = time.time()
+        if self.__num_of_run % 1000 == 0:
+            self.kill_browser()
+            self.setup_browser()
         try:
             self.browser.get('file://' + abspath(html_file))
         except Exception as e:
             print ('Error in run_html')
-            #print ('run_html', e)
             self.kill_browser()
             self.setup_browser()
             return False
@@ -146,25 +140,11 @@ class Browser:
             s1 = time.time()
             self.exec_script(AHEM_FONT) # baseline
             self.exec_script(ALLSET) # baseline
-#            self.time['AHEM'] += time.time() - s1
-#            s2 = time.time()
-#            self.exec_script(NOSCROLLBAR) # baseline
-#            self.time['SCROLL'] += time.time() - s2
-#            s3 = time.time()
-#            self.exec_script(FFAHEM) # baseline
-#            self.time['FFAHEM'] += time.time() - s3
-#
-#            s4 = time.time()
-#            self.exec_script(NORM) # baseline
-#            self.time['NORM'] += time.time() - s4
        # invalidation bug trigger
             self.time['SCRIPT'] += time.time() - s1
         self.time['runhtml'] += time.time() - start
         self.count['runhtml'] += 1
         self.__num_of_run += 1
-        if self.__num_of_run % 1000 == 0:
-            self.kill_browser()
-            self.setup_browser()
         return True
 
     def _get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
@@ -174,19 +154,25 @@ class Browser:
         #save_shot = True
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
-
+        bad = False
         hash_v = self.__screenshot_and_hash(screenshot_name)
-        for _ in range(0):
+        for _ in range(1):
             if ImageDiff.diff_images(hash_v, self.__screenshot_and_hash(screenshot_name)):
                 self.flak['BAD'] += 1
-                #return
+                return
         self.flak['TOTAL'] += 1
         return hash_v
 
     def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
         hash_v = self._get_hash_from_html(html_file, save_shot, fn_reduction)
-        for _ in range(0):
-            if hash_v is None: return None
-            elif ImageDiff.diff_images(hash_v, self._get_hash_from_html(html_file, save_shot, fn_reduction)): return None
+        for _ in range(1):
+            if hash_v is None: 
+                self.flak['BAD HTML'] += 1
+                print ('bad', html_file)
+                return None
+            elif ImageDiff.diff_images(hash_v, self._get_hash_from_html(html_file, save_shot, fn_reduction)): 
+                self.flak['BAD HTML DIFF'] += 1
+                print ('bad diff', html_file)
+                return None
         return hash_v
 

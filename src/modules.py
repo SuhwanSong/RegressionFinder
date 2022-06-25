@@ -48,12 +48,16 @@ class CrossVersion(Thread):
         return True
 
     def stop_browsers(self) -> None:
+        num_of_flake = 0
+        num_of_flake2 = 0
         for br in self.__br_list: 
             print (br.time)
             print (br.count)
-            print (br.flak)
+            num_of_flake += br.flak['BAD HTML']
+            num_of_flake2 += br.flak['BAD HTML DIFF']
             br.kill_browser()
         self.__br_list.clear()
+        print ('NUM_OF_FLAKE', num_of_flake , num_of_flake2)
 
     def cross_version_test_html(self, html_file: str) -> Optional[list]:
         img_hashes = []
@@ -134,8 +138,6 @@ class Oracle(Thread):
             self.ref_br = None
 
     def is_regression(self, hashes: tuple, ref_hash) -> bool:
-        #return hashes[0] != hashes[1] and hashes[0] == ref_hash
-        #return ImageDiff.same_images(hashes[0], ref_hash)
         return not ImageDiff.diff_images(hashes[0], ref_hash)
 
 
@@ -180,6 +182,7 @@ class Bisecter(Thread):
         self.__version_list = []
         self.__index_hash = {}
         self.saveshot = False
+        self.cur_mid = None
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
@@ -207,6 +210,9 @@ class Bisecter(Thread):
     def get_chrome(self, ver: int) -> None:
         self.helper.download_chrome(ver)
 
+    def get_pixel_from_html(self, html_file): 
+        return self.ref_br.get_hash_from_html(html_file, self.saveshot, True)
+
     def run(self) -> None:
         cur_mid = None
         hpr = self.helper
@@ -216,7 +222,7 @@ class Bisecter(Thread):
             vers = hpr.get_vers()
             if not vers: 
                 break
-            print (vers)
+            #print (vers)
 
             result = hpr.pop_from_queue()
             if not result: 
@@ -234,31 +240,25 @@ class Bisecter(Thread):
             start_idx = self.convert_to_index(start)
             end_idx = self.convert_to_index(end)
 
-#            if end_idx - start_idx == 1:
-#                hpr.update_postq(vers, html_file, hashes)
-#                print (html_file, start, end, 'postq')
-#                continue
-
             mid_idx = (start_idx + end_idx) // 2
             mid = self.convert_to_ver(mid_idx)
+            self.cur_mid = mid
             if cur_mid != mid:
                 cur_mid = mid
                 self.get_chrome(cur_mid)
                 if not self.start_ref_browser(cur_mid):
                     continue
 
-            ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, True)
-            if ref_hash is None: 
-                print (html_file, 'is wrong with image;')
-                continue
+            ref_hash = self.get_pixel_from_html(html_file)
 
-            if not ImageDiff.diff_images(hashes[0], ref_hash) and not ImageDiff.diff_images(hashes[1], ref_hash):
-                print (html_file, 'pixels are same -- ')
+            # if crash --> go to upper
+            # if mid is different to left --> go to lower
+            # else --> go to upper
 
-            if not ImageDiff.diff_images(hashes[0], ref_hash):
+            if ref_hash is None or not ImageDiff.diff_images(hashes[0], ref_hash):
                 if mid_idx + 1 == end_idx:
                     hpr.update_postq((mid, end, ref), html_file, hashes)
-                    print (html_file, mid, end, 'postq 1')
+                    #print (html_file, mid, end, 'postq 1')
                     continue
                 low = self.convert_to_ver(mid_idx)
                 high = end
@@ -266,7 +266,7 @@ class Bisecter(Thread):
             elif not ImageDiff.diff_images(hashes[1], ref_hash):
                 if mid_idx - 1 == start_idx:
                     hpr.update_postq((start, mid, ref), html_file, hashes)
-                    print (html_file, start, mid, 'postq 2')
+                    #print (html_file, start, mid, 'postq 2')
                     continue
                 low = start
                 high = self.convert_to_ver(mid_idx)
@@ -274,21 +274,6 @@ class Bisecter(Thread):
                 print (html_file, 'is skipped;')
                 continue
             hpr.insert_to_queue((low, high, ref), html_file, hashes)
-
-#            if ImageDiff.diff_images(hashes[0], ref_hash):
-#                if mid_idx - 1 == start_idx:
-#                    hpr.update_postq((start, mid, ref), html_file, hashes)
-#                    continue
-#                low = start
-#                high = self.convert_to_ver(mid_idx - 1)
-#                hpr.insert_to_queue((low, high, ref), html_file, hashes)
-#            if ImageDiff.diff_images(hashes[1], ref_hash):
-#                if mid_idx + 1 == end_idx:
-#                    hpr.update_postq((mid, end, ref), html_file, hashes)
-#                    continue
-#                low = self.convert_to_ver(mid_idx + 1)
-#                high = end
-#                hpr.insert_to_queue((low, high, ref), html_file, hashes)
 
 
         self.stop_ref_browser()

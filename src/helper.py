@@ -74,7 +74,6 @@ class IOQueue:
         self.__preqs[vers].put(value)
 
         if not self.__vers: self.__vers = self.__select_vers()
-
         self.__queue_lock.release()
 
     def pop_from_queue(self) -> Optional[list]:
@@ -236,22 +235,34 @@ class Generator:
                 None)
 
 
+#class ImageDiff:
+#    def get_phash(png):
+#        stream = png if isinstance(png, str) else BytesIO(png)
+#        with Image.open(stream, 'r') as image:
+#            return np.asarray(image)
+#
+#    def diff_images(hash_A, hash_B):
+#        return not np.array_equal(hash_A, hash_B)
+#
+#
+#    def save_image(name, png):
+#        stream = BytesIO(png)
+#        im = Image.open(stream, 'r')
+#        im.save(name)
+#        im.close()
+        
 class ImageDiff:
     def get_phash(png):
-        stream = png if isinstance(png, str) else BytesIO(png)
-        with Image.open(stream, 'r') as image:
-            return np.asarray(image)
+        return png
 
     def diff_images(hash_A, hash_B):
-        return not np.array_equal(hash_A, hash_B)
-
+        return hash_A != hash_B
 
     def save_image(name, png):
         stream = BytesIO(png)
         im = Image.open(stream, 'r')
         im.save(name)
         im.close()
-        
 
 
 MILESTONE = {
