@@ -41,14 +41,12 @@
 <svgchild_svg> = <svgelement_stop>
 <svgchild_svg> = <svgelement_a>
 <svgchild_svg> = <svgelement_switch>
-<svgchild_svg> = <svgelement_set>
 <svgchild_svg> = <svgelement_font-face>
 <svgchild_svg> = <svgelement_polygon>
 <svgchild_svg> = <svgelement_tspan>
 <svgchild_svg> = <svgelement_tref>
 <svgchild_svg> = <svgelement_textPath>
 <svgchild_svg> = <svgelement_metadata>
-<svgchild_svg> = <svgelement_discard>
 <svgchild_svg> = <svgelement_feConvolveMatrix>
 <svgchild_svg> = <svgelement_feDistantLight>
 <svgchild_svg> = <svgelement_glyph>
@@ -102,7 +100,6 @@
 <svgelement> = <svgelement_cursor>
 <svgelement> = <svgelement_defs>
 <svgelement> = <svgelement_desc>
-<svgelement> = <svgelement_discard>
 <svgelement> = <svgelement_ellipse>
 <svgelement> = <svgelement_feBlend>
 <svgelement> = <svgelement_feColorMatrix>
@@ -154,14 +151,12 @@
 <svgelement> = <svgelement_meshrow>
 <svgelement> = <svgelement_metadata>
 <svgelement> = <svgelement_missing-glyph>
-<svgelement> = <svgelement_mpath>
 <svgelement> = <svgelement_path>
 <svgelement> = <svgelement_pattern>
 <svgelement> = <svgelement_polygon>
 <svgelement> = <svgelement_polyline>
 <svgelement> = <svgelement_radialGradient>
 <svgelement> = <svgelement_rect>
-<svgelement> = <svgelement_set>
 <svgelement> = <svgelement_solidcolor>
 <svgelement> = <svgelement_stop>
 <svgelement> = <svgelement_switch>
@@ -235,7 +230,6 @@
 <svgelement_circle> = <lt>circle <svgattr_cx> <svgattr_cy> <svgattr_r> <svgattrs_circle><gt><newline><svgchildren_circle><lt>/circle<gt><newline>
 <svgchildren_circle nonrecursive=true p=0.5> = <svgchild_circle>
 <svgchildren_circle> = <svgchild_circle><svgchildren_circle>
-<svgchild_circle> = <svgelement_set>
 <svgchild_circle> = <svgelement>
 
 <svgattrs_circle> = <svgattrx_circle> <svgattrx_circle> <svgattrx_circle> <svgattrx_circle> <svgattrx_circle> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -308,12 +302,6 @@
 <svgelement_desc> = <lt>desc <svgattrs_desc><gt><htmlsafestring min=32 max=126><lt>/desc<gt><newline>
 <svgattrs_desc> = <svgattr> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
 
-
-<svgelement_discard> = <lt>discard <svgattrs_discard> /<gt><newline>
-
-<svgattrs_discard> = <svgattrx_discard> <svgattrx_discard> <svgattrx_discard> <svgattrx_discard> <svgattrx_discard> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
-<svgattrx_discard> = <svgattr_begin>
-<svgattrx_discard> = <svgattr_xlink_href>
 
 
 <svgelement_ellipse> = <lt>ellipse <svgattr_cx> <svgattr_cy> <svgattr_rx> <svgattr_ry> <svgattrs_ellipse> /<gt><newline>
@@ -670,7 +658,6 @@
 <svgchild_filter> = <svgelement_feDiffuseLighting>
 <svgchild_filter> = <svgelement_feMorphology>
 <svgchild_filter> = <svgelement_feBlend>
-<svgchild_filter> = <svgelement_set>
 <svgchild_filter> = <svgelement>
 
 <svgattrs_filter> = <svgattrx_filter> <svgattrx_filter> <svgattrx_filter> <svgattrx_filter> <svgattrx_filter> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -844,7 +831,6 @@
 <svgchildren_image nonrecursive=true p=0.5> = <svgchild_image>
 <svgchildren_image> = <svgchild_image><svgchildren_image>
 <svgchild_image> = <svgelement_title>
-<svgchild_image> = <svgelement_set>
 <svgchild_image> = <svgelement>
 
 <svgattrs_image> = <svgattrx_image> <svgattrx_image> <svgattrx_image> <svgattrx_image> <svgattrx_image> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -873,7 +859,6 @@
 <svgelement_line> = <lt>line <svgattr_x1> <svgattr_y1> <svgattr_x2> <svgattr_y2> <svgattrs_line><gt><newline><svgchildren_line><lt>/line<gt><newline>
 <svgchildren_line nonrecursive=true p=0.5> = <svgchild_line>
 <svgchildren_line> = <svgchild_line><svgchildren_line>
-<svgchild_line> = <svgelement_set>
 <svgchild_line> = <svgelement>
 
 <svgattrs_line> = <svgattrx_line> <svgattrx_line> <svgattrx_line> <svgattrx_line> <svgattrx_line> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -897,7 +882,6 @@
 <svgchildren_linearGradient nonrecursive=true p=0.5> = <svgchild_linearGradient>
 <svgchildren_linearGradient> = <svgchild_linearGradient><svgchildren_linearGradient>
 <svgchild_linearGradient> = <svgelement_stop>
-<svgchild_linearGradient> = <svgelement_set>
 <svgchild_linearGradient> = <svgelement>
 
 <svgattrs_linearGradient> = <svgattrx_linearGradient> <svgattrx_linearGradient> <svgattrx_linearGradient> <svgattrx_linearGradient> <svgattrx_linearGradient> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -1006,17 +990,10 @@
 <svgattrx_missing-glyph> = <svgattr_horiz-adv-x>
 
 
-<svgelement_mpath> = <lt>mpath <svgattrs_mpath> /<gt><newline>
-
-<svgattrs_mpath> = <svgattrx_mpath> <svgattrx_mpath> <svgattrx_mpath> <svgattrx_mpath> <svgattrx_mpath> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
-<svgattrx_mpath> = <svgattr_xlink_href>
-
-
 <svgelement_path> = <lt>path <svgattr_d> <svgattrs_path> /<gt><newline>
 <svgelement_path> = <lt>path <svgattr_d> <svgattrs_path><gt><newline><svgchildren_path><lt>/path<gt><newline>
 <svgchildren_path nonrecursive=true p=0.5> = <svgchild_path>
 <svgchildren_path> = <svgchild_path><svgchildren_path>
-<svgchild_path> = <svgelement_set>
 <svgchild_path> = <svgelement>
 
 <svgattrs_path> = <svgattrx_path> <svgattrx_path> <svgattrx_path> <svgattrx_path> <svgattrx_path> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -1095,7 +1072,6 @@
 <svgelement_polyline> = <lt>polyline <svgattr_points> <svgattrs_polyline><gt><newline><svgchildren_polyline><lt>/polyline<gt><newline>
 <svgchildren_polyline nonrecursive=true p=0.5> = <svgchild_polyline>
 <svgchildren_polyline> = <svgchild_polyline><svgchildren_polyline>
-<svgchild_polyline> = <svgelement_set>
 <svgchild_polyline> = <svgelement>
 
 <svgattrs_polyline> = <svgattrx_polyline> <svgattrx_polyline> <svgattrx_polyline> <svgattrx_polyline> <svgattrx_polyline> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -1117,7 +1093,6 @@
 <svgchildren_radialGradient nonrecursive=true p=0.5> = <svgchild_radialGradient>
 <svgchildren_radialGradient> = <svgchild_radialGradient><svgchildren_radialGradient>
 <svgchild_radialGradient> = <svgelement_stop>
-<svgchild_radialGradient> = <svgelement_set>
 <svgchild_radialGradient> = <svgelement>
 
 <svgattrs_radialGradient> = <svgattrx_radialGradient> <svgattrx_radialGradient> <svgattrx_radialGradient> <svgattrx_radialGradient> <svgattrx_radialGradient> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -1141,8 +1116,6 @@
 <svgchildren_rect nonrecursive=true p=0.5> = <svgchild_rect>
 <svgchildren_rect> = <svgchild_rect><svgchildren_rect>
 <svgchild_rect> = <svgelement_pattern>
-<svgchild_rect> = <svgelement_set>
-<svgchild_rect> = <svgelement_discard>
 <svgchild_rect> = <svgelement>
 
 <svgattrs_rect> = <svgattrx_rect> <svgattrx_rect> <svgattrx_rect> <svgattrx_rect> <svgattrx_rect> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -1186,8 +1159,6 @@
 <svgattrx_rect> = <svgattr_onmouseout>
 <svgattrx_rect> = <svgattr_shape-rendering>
 
-
-<svgelement_set> = <lt>set <setattr> <svgattrs_set> /<gt><newline>
 
 <setattr> = attributeName="accumulate" to="<svgattr_accumulate_value>"
 <setattr> = attributeName="additive" to="<svgattr_additive_value>"
@@ -1507,7 +1478,6 @@
 <svgchild_text> = <svgelement_tref>
 <svgchild_text> = <svgelement_linearGradient>
 <svgchild_text> = <svgelement_altGlyph>
-<svgchild_text> = <svgelement_set>
 <svgchild_text> = <svgelement>
 
 <svgattrs_text> = <svgattrx_text> <svgattrx_text> <svgattrx_text> <svgattrx_text> <svgattrx_text> <svgattr> <svgattr> <svgattr> <svgattr> <svgattr>
@@ -1676,7 +1646,6 @@
 <svgchildren_use> = <svgchild_use><svgchildren_use>
 <svgchild_use> = <svgelement_symbol>
 <svgchild_use> = <svgelement_desc>
-<svgchild_use> = <svgelement_set>
 <svgchild_use> = <svgelement_use>
 <svgchild_use> = <svgelement_a>
 <svgchild_use> = <svgelement_title>

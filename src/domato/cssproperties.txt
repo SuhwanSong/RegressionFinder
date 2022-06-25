@@ -542,52 +542,6 @@
 <cssproperty_-webkit-transform-style> = flat
 <cssproperty_-webkit-transform-style> = perserve-3d
 
-<cssproperty_-webkit-transition> = opacity <fuzzint>s
-<cssproperty_-webkit-transition> = left <fuzzint>s, top <fuzzint>s
-<cssproperty_-webkit-transition> = opacity <fuzzint>s
-<cssproperty_-webkit-transition> = left <fuzzint>s linear
-<cssproperty_-webkit-transition> = all <fuzzint>s linear
-<cssproperty_-webkit-transition> = height <fuzzint>s
-<cssproperty_-webkit-transition> = width <fuzzint>s
-<cssproperty_-webkit-transition> = <fuzzint>s
-
-<cssproperty_-webkit-transition-duration> = <fuzzint>s
-
-<cssproperty_-webkit-transition-property> = width
-<cssproperty_-webkit-transition-property> = opacity, left, opacity, top, width, opacity, height, opacity
-<cssproperty_-webkit-transition-property> = box-shadow
-<cssproperty_-webkit-transition-property> = left
-<cssproperty_-webkit-transition-property> = inherit
-<cssproperty_-webkit-transition-property> = top, -webkit-text-fill-color, text-shadow, all
-<cssproperty_-webkit-transition-property> = transform
-<cssproperty_-webkit-transition-property> = width, left, background-color, height, top
-<cssproperty_-webkit-transition-property> = opacity
-<cssproperty_-webkit-transition-property> = none
-<cssproperty_-webkit-transition-property> = right
-<cssproperty_-webkit-transition-property> = all
-<cssproperty_-webkit-transition-property> = border-radius
-<cssproperty_-webkit-transition-property> = -webkit-border-radius
-<cssproperty_-webkit-transition-property> = background-image
-<cssproperty_-webkit-transition-property> = background
-<cssproperty_-webkit-transition-property> = text-shadow
-<cssproperty_-webkit-transition-property> = background-position
-<cssproperty_-webkit-transition-property> = text-indent
-<cssproperty_-webkit-transition-property> = border-image-source
-<cssproperty_-webkit-transition-property> = border-image
-<cssproperty_-webkit-transition-property> = top, background
-<cssproperty_-webkit-transition-property> = top, left
-<cssproperty_-webkit-transition-property> = -webkit-mask
-<cssproperty_-webkit-transition-property> = -webkit-mask-size
-<cssproperty_-webkit-transition-property> = -webkit-background-size
-
-<cssproperty_-webkit-transition-timing-function> = linear
-<cssproperty_-webkit-transition-timing-function> = cubic-bezier(<fuzzint>, <fuzzint>, <fuzzint>, <fuzzint>)
-<cssproperty_-webkit-transition-timing-function> = inherit
-<cssproperty_-webkit-transition-timing-function> = ease-out
-<cssproperty_-webkit-transition-timing-function> = ease-in
-<cssproperty_-webkit-transition-timing-function> = steps(<fuzzint>, end)
-<cssproperty_-webkit-transition-timing-function> = ease
-<cssproperty_-webkit-transition-timing-function> = ease-in-out
 
 <cssproperty_-webkit-user-drag> = element
 <cssproperty_-webkit-user-drag> = none
@@ -3313,66 +3267,6 @@
 <cssproperty_transform-style> = inherit
 <cssproperty_transform-style> = initial
 
-<cssproperty_transition> = width <fuzzint>s
-<cssproperty_transition> = width <fuzzint>ms
-<cssproperty_transition> = height <fuzzint>ms
-<cssproperty_transition> = background-color <fuzzint>ms cubic-bezier(<fuzzint>, <float>, <float>, <fuzzint>)
-<cssproperty_transition> = all <fuzzint>ms
-<cssproperty_transition> = opacity <fuzzint>s
-<cssproperty_transition> = all <fuzzint>s
-<cssproperty_transition> = opacity <fuzzint>ms
-<cssproperty_transition> = opacity <float>s
-<cssproperty_transition> = color <fuzzint>s steps(<fuzzint>, start)
-<cssproperty_transition> = width <fuzzint>s, top <fuzzint>s
-<cssproperty_transition> = transform <float>s
-<cssproperty_transition> = opacity <fuzzint>s linear
-<cssproperty_transition> = all <float>s linear
-<cssproperty_transition> = color <fuzzint>s
-<cssproperty_transition> = background, -webkit-mask <fuzzint>s
-<cssproperty_transition> = <fuzzint>s
-<cssproperty_transition> = margin <fuzzint>s, background <fuzzint>ms
-<cssproperty_transition> = -webkit-clip-path <fuzzint>s
-<cssproperty_transition> = transform <fuzzint>s <fuzzint>s linear
-<cssproperty_transition> = top <fuzzint>ms linear
-<cssproperty_transition> = left <fuzzint>ms linear
-<cssproperty_transition> = padding <fuzzint>s
-<cssproperty_transition> = all <fuzzint>s linear
-<cssproperty_transition> = transform <fuzzint>ms linear
-<cssproperty_transition> = background-color <fuzzint>s
-<cssproperty_transition> = background <fuzzint>ms
-<cssproperty_transition> = width <fuzzint>s ease-in-out
-
-<cssproperty_transition-duration> = <fuzzint>s
-<cssproperty_transition-duration> = inherit
-<cssproperty_transition-duration> = initial
-
-<cssproperty_transition-properties> = transform
-
-<cssproperty_transition-property> = transform
-<cssproperty_transition-property> = object-position
-<cssproperty_transition-property> = left
-<cssproperty_transition-property> = shape-outside
-<cssproperty_transition-property> = top, counter-increment, overflow, transition-duration
-<cssproperty_transition-property> = none
-<cssproperty_transition-property> = x
-<cssproperty_transition-property> = y
-<cssproperty_transition-property> = width
-<cssproperty_transition-property> = inherit
-<cssproperty_transition-property> = initial
-<cssproperty_transition-property> = top
-<cssproperty_transition-property> = r
-<cssproperty_transition-property> = rx
-<cssproperty_transition-property> = ry
-<cssproperty_transition-property> = cx
-<cssproperty_transition-property> = cy
-<cssproperty_transition-property> = fill, stroke
-
-<cssproperty_transition-timing-function> = linear
-<cssproperty_transition-timing-function> = inherit
-<cssproperty_transition-timing-function> = initial
-<cssproperty_transition-timing-function> = steps(<fuzzint>, start)
-<cssproperty_transition-timing-function> = ease
-<cssproperty_transition-timing-function> = cubic-bezier(<float>, <float>, <float>, <float>)
 
 <cssproperty_translate> = <fuzzint>px <fuzzint>px
 <cssproperty_translate> = <fuzzint> <fuzzint> <fuzzint>px
@@ -3488,7 +3382,6 @@
 <cssproperty_will-change> = right
 <cssproperty_will-change> = bottom
 <cssproperty_will-change> = -webkit-filter
-<cssproperty_will-change> = transition, opacity, z-index
 <cssproperty_will-change> = z-index
 <cssproperty_will-change> = -webkit-transform-style
 <cssproperty_will-change> = -webkit-perspective

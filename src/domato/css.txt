@@ -77,8 +77,8 @@
 #todo all rules
 <rule> = <selector> { <declaration> }
 
-<rules root=true> = <rule10><rule10><rule10><rule10>
-<rule10> = <rulenl><rulenl><rulenl><rulenl>
+<rules root=true> = <rule10><rule10><rule10><rule10><rule10><rule10>
+<rule10> = <rulenl><rulenl><rulenl><rulenl><rulenl>
 <rulenl> = <rule><newline>
 
 <declaration> = <cssproperty>; <cssproperty>; <cssproperty>; <cssproperty>; <cssproperty>; <cssproperty>; <cssproperty>; <cssproperty>; <cssproperty>; <cssproperty>
@@ -230,9 +230,6 @@
 <cssproperty_name> = -webkit-transform
 <cssproperty_name> = -webkit-transform-origin
 <cssproperty_name> = -webkit-transform-style
-<cssproperty_name> = -webkit-transition
-<cssproperty_name> = -webkit-transition-property
-<cssproperty_name> = -webkit-transition-timing-function
 <cssproperty_name> = -webkit-user-drag
 <cssproperty_name> = -webkit-user-modify
 <cssproperty_name> = -webkit-user-select
@@ -541,10 +538,6 @@
 <cssproperty_name> = transform
 <cssproperty_name> = transform-origin
 <cssproperty_name> = transform-style
-<cssproperty_name> = transition
-<cssproperty_name> = transition-properties
-<cssproperty_name> = transition-property
-<cssproperty_name> = transition-timing-function
 <cssproperty_name> = translate
 <cssproperty_name> = unicode-bidi
 <cssproperty_name> = user-select
@@ -702,9 +695,6 @@
 <cssproperty_value> = <cssproperty_-webkit-transform>
 <cssproperty_value> = <cssproperty_-webkit-transform-origin>
 <cssproperty_value> = <cssproperty_-webkit-transform-style>
-<cssproperty_value> = <cssproperty_-webkit-transition>
-<cssproperty_value> = <cssproperty_-webkit-transition-property>
-<cssproperty_value> = <cssproperty_-webkit-transition-timing-function>
 <cssproperty_value> = <cssproperty_-webkit-user-drag>
 <cssproperty_value> = <cssproperty_-webkit-user-modify>
 <cssproperty_value> = <cssproperty_-webkit-user-select>
@@ -1013,10 +1003,6 @@
 <cssproperty_value> = <cssproperty_transform>
 <cssproperty_value> = <cssproperty_transform-origin>
 <cssproperty_value> = <cssproperty_transform-style>
-<cssproperty_value> = <cssproperty_transition>
-<cssproperty_value> = <cssproperty_transition-properties>
-<cssproperty_value> = <cssproperty_transition-property>
-<cssproperty_value> = <cssproperty_transition-timing-function>
 <cssproperty_value> = <cssproperty_translate>
 <cssproperty_value> = <cssproperty_unicode-bidi>
 <cssproperty_value> = <cssproperty_user-select>
@@ -1174,9 +1160,6 @@
 <cssproperty> = -webkit-transform: <cssproperty_-webkit-transform>
 <cssproperty> = -webkit-transform-origin: <cssproperty_-webkit-transform-origin>
 <cssproperty> = -webkit-transform-style: <cssproperty_-webkit-transform-style>
-<cssproperty> = -webkit-transition: <cssproperty_-webkit-transition>
-<cssproperty> = -webkit-transition-property: <cssproperty_-webkit-transition-property>
-<cssproperty> = -webkit-transition-timing-function: <cssproperty_-webkit-transition-timing-function>
 <cssproperty> = -webkit-user-drag: <cssproperty_-webkit-user-drag>
 <cssproperty> = -webkit-user-modify: <cssproperty_-webkit-user-modify>
 <cssproperty> = -webkit-user-select: <cssproperty_-webkit-user-select>
@@ -1485,10 +1468,6 @@
 <cssproperty> = transform: <cssproperty_transform>
 <cssproperty> = transform-origin: <cssproperty_transform-origin>
 <cssproperty> = transform-style: <cssproperty_transform-style>
-<cssproperty> = transition: <cssproperty_transition>
-<cssproperty> = transition-properties: <cssproperty_transition-properties>
-<cssproperty> = transition-property: <cssproperty_transition-property>
-<cssproperty> = transition-timing-function: <cssproperty_transition-timing-function>
 <cssproperty> = translate: <cssproperty_translate>
 <cssproperty> = unicode-bidi: <cssproperty_unicode-bidi>
 <cssproperty> = user-select: <cssproperty_user-select>

@@ -51,7 +51,7 @@
 
 <attributes> = <attribute> <attribute> <attribute> <attribute> <attribute>
 
-<bodyelements> = <newline><element><newline><element><newline><element><newline><element><newline><element><newline><element><newline>
+<bodyelements> = <newline><element><newline><element><newline><element><newline><element><newline><element><newline><element><newline><element><newline><element><newline><element><newline><element><newline><element><newline><element><newline>
 <headelements> = <htmlsafestring min=32 max=126>
 
 <innerelements nonrecursive=true p=0.5> = <htmlsafestring min=32 max=126>
@@ -541,7 +541,6 @@
 #<attribute_eventhandler> = <attribute_ontouchend>
 #<attribute_eventhandler> = <attribute_ontouchmove>
 #<attribute_eventhandler> = <attribute_ontouchstart>
-#<attribute_eventhandler> = <attribute_ontransitionend>
 #<attribute_eventhandler> = <attribute_onunload>
 #<attribute_eventhandler> = <attribute_onvolumechange>
 #<attribute_eventhandler> = <attribute_onwaiting>
@@ -558,7 +557,6 @@
 #<attribute_eventhandler> = <attribute_onwebkitsourceended>
 #<attribute_eventhandler> = <attribute_onwebkitsourceopen>
 #<attribute_eventhandler> = <attribute_onwebkitspeechchange>
-#<attribute_eventhandler> = <attribute_onwebkittransitionend>
 #<attribute_eventhandler> = <attribute_onwheel>
 
 <attribute_abbr> = abbr="<abbr_value>"
@@ -826,9 +824,9 @@
 <attribute_onautocomplete> = onautocomplete="<eventhandler>"
 <attribute_onautocompleteerror> = onautocompleteerror="<eventhandler>"
 <attribute_onafterscriptexecute> = onafterscriptexecute="<eventhandler>"
-<attribute_onanimationend> = onanimationend="<eventhandler>"
-<attribute_onanimationiteration> = onanimationiteration="<eventhandler>"
-<attribute_onanimationstart> = onanimationstart="<eventhandler>"
+#<attribute_onanimationend> = onanimationend="<eventhandler>"
+#<attribute_onanimationiteration> = onanimationiteration="<eventhandler>"
+#<attribute_onanimationstart> = onanimationstart="<eventhandler>"
 <attribute_onbeforecopy> = onbeforecopy="<eventhandler>"
 <attribute_onbeforecut> = onbeforecut="<eventhandler>"
 <attribute_onbeforeload> = onbeforeload="<eventhandler>"
@@ -909,13 +907,12 @@
 <attribute_ontouchend> = ontouchend="<eventhandler>"
 <attribute_ontouchmove> = ontouchmove="<eventhandler>"
 <attribute_ontouchstart> = ontouchstart="<eventhandler>"
-<attribute_ontransitionend> = ontransitionend="<eventhandler>"
 <attribute_onunload> = onunload="<eventhandler>"
 <attribute_onvolumechange> = onvolumechange="<eventhandler>"
 <attribute_onwaiting> = onwaiting="<eventhandler>"
-<attribute_onwebkitanimationend> = onwebkitanimationend="<eventhandler>"
-<attribute_onwebkitanimationiteration> = onwebkitanimationiteration="<eventhandler>"
-<attribute_onwebkitanimationstart> = onwebkitanimationstart="<eventhandler>"
+#<attribute_onwebkitanimationend> = onwebkitanimationend="<eventhandler>"
+#<attribute_onwebkitanimationiteration> = onwebkitanimationiteration="<eventhandler>"
+#<attribute_onwebkitanimationstart> = onwebkitanimationstart="<eventhandler>"
 <attribute_onwebkitfullscreenchange> = onwebkitfullscreenchange="<eventhandler>"
 <attribute_onwebkitfullscreenerror> = onwebkitfullscreenerror="<eventhandler>"
 <attribute_onwebkitkeyadded> = onwebkitkeyadded="<eventhandler>"
@@ -926,7 +923,6 @@
 <attribute_onwebkitsourceended> = onwebkitsourceended="<eventhandler>"
 <attribute_onwebkitsourceopen> = onwebkitsourceopen="<eventhandler>"
 <attribute_onwebkitspeechchange> = onwebkitspeechchange="<eventhandler>"
-<attribute_onwebkittransitionend> = onwebkittransitionend="<eventhandler>"
 <attribute_onwheel> = onwheel="<eventhandler>"
 
 <attributestring> = <htmlsafestring min=32 max=126>

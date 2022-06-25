@@ -110,10 +110,10 @@ class Grammar(object):
 
         self._line_guard = ''
 
-        self._recursion_max = 20 # 50
+        self._recursion_max = 40 # 50
         self._var_reuse_prob = 0.75 # 0.75
         self._interesting_line_prob = 0.5 #0.9
-        self._max_vars_of_same_type = 2 # 5
+        self._max_vars_of_same_type = 3 # 5
 
         self._inheritance = {}
 
