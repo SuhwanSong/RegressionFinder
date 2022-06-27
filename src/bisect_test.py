@@ -21,14 +21,12 @@ class BisectTester(Bisecter):
     def stop_ref_browser(self) -> None:
         pass
 
-    def set_version_list(self) -> None:
-        pass
-
-    def convert_to_ver(self, index: int) -> int:
-        return index
-
-    def convert_to_index(self, ver: int) -> int:
-        return ver
+    def set_version_list(self, html_file) -> None:
+        if html_file not in self.version_list:
+            self.version_list[html_file] = list(range(20))
+            self.index_hash[html_file] = {}
+            for idx, ver in enumerate(self.version_list[html_file]):
+                self.index_hash[html_file][ver] = idx
 
     def get_chrome(self, ver: int) -> None:
         pass

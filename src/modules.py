@@ -175,7 +175,7 @@ class Bisecter(Thread):
         super().__init__()
         self.helper = helper
         self.ref_br = None
-        self.version_list = []
+        self.version_list = {}
         self.index_hash = {}
         self.saveshot = False
         self.cur_mid = None
@@ -190,17 +190,25 @@ class Bisecter(Thread):
             self.ref_br.kill_browser()
             self.ref_br = None
 
-    def set_version_list(self) -> None:
-        self.version_list = FileManager.get_bisect_csv()
-        self.index_hash.clear()
-        for idx, ver in enumerate(self.version_list):
-          self.index_hash[ver] = idx
+    def set_version_list(self, html_file) -> None:
+        verlist = FileManager.get_bisect_csv()
+        if html_file not in self.version_list:
+            self.version_list[html_file] = list(verlist)
+            self.index_hash[html_file] = {}
+            for idx, ver in enumerate(self.version_list[html_file]):
+                self.index_hash[html_file][ver] = idx
 
-    def convert_to_ver(self, index: int) -> int:
-        return self.version_list[index]
+    def convert_to_ver(self, html_file, index: int) -> int:
+        return self.version_list[html_file][index]
 
-    def convert_to_index(self, ver: int) -> int:
-        return self.index_hash[ver]
+    def convert_to_index(self, html_file, ver: int) -> int:
+        return self.index_hash[html_file][ver]
+
+    def pop_ver_from_list(self, html_file, ver):
+        self.version_list[html_file].remove(ver)
+        self.index_hash[html_file] = {}
+        for idx, ver in enumerate(self.version_list[html_file]):
+            self.index_hash[html_file][ver] = idx
 
     def get_chrome(self, ver: int) -> None:
         self.helper.download_chrome(ver)
@@ -211,7 +219,6 @@ class Bisecter(Thread):
     def run(self) -> None:
         cur_mid = None
         hpr = self.helper
-        self.set_version_list()
 
         while True:
             vers = hpr.get_vers()
@@ -226,17 +233,21 @@ class Bisecter(Thread):
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
+            self.set_version_list(html_file)
 
             start, end, ref = vers
             if start >= end: 
                 print (html_file, 'start and end are the same;')
                 continue
 
-            start_idx = self.convert_to_index(start)
-            end_idx = self.convert_to_index(end)
+            start_idx = self.convert_to_index(html_file, start)
+            end_idx = self.convert_to_index(html_file, end)
+
+#            if start_idx + 1 == end_idx:
+#                hpr.update_postq((start, end, ref), html_file, hashes)
 
             mid_idx = (start_idx + end_idx) // 2
-            mid = self.convert_to_ver(mid_idx)
+            mid = self.convert_to_ver(html_file, mid_idx)
             self.cur_mid = mid
             if cur_mid != mid:
                 cur_mid = mid
@@ -245,31 +256,29 @@ class Bisecter(Thread):
                     continue
 
             ref_hash = self.get_pixel_from_html(html_file)
+            if ref_hash is None:
+                self.pop_ver_from_list(html_file, mid)
+                hpr.insert_to_queue((start, end, ref), html_file, hashes)
+                continue
 
-            # if crash --> go to upper
-            # if mid is different to left --> go to lower
-            # else --> go to upper
-
-            if ref_hash is None or not ImageDiff.diff_images(hashes[0], ref_hash):
+            elif not ImageDiff.diff_images(hashes[0], ref_hash):
                 if mid_idx + 1 == end_idx:
                     hpr.update_postq((mid, end, ref), html_file, hashes)
                     #print (html_file, mid, end, 'postq 1')
                     continue
-                low = self.convert_to_ver(mid_idx)
+                low = self.convert_to_ver(html_file, mid_idx)
                 high = end
 
-            elif not ImageDiff.diff_images(hashes[1], ref_hash):
+            else:
+            #elif not ImageDiff.diff_images(hashes[1], ref_hash):
                 if mid_idx - 1 == start_idx:
                     hpr.update_postq((start, mid, ref), html_file, hashes)
                     #print (html_file, start, mid, 'postq 2')
                     continue
                 low = start
-                high = self.convert_to_ver(mid_idx)
-            else:
-                print (html_file, 'is skipped;')
-                continue
-            hpr.insert_to_queue((low, high, ref), html_file, hashes)
+                high = self.convert_to_ver(html_file, mid_idx)
 
+            hpr.insert_to_queue((low, high, ref), html_file, hashes)
 
         self.stop_ref_browser()
 
