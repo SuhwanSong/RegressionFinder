@@ -52,34 +52,34 @@ def main():
         Preprocesser(input_version_pair, output_dir, num_of_threads).process()
 
 
-    input_version_pair = {}
-    inputs = FileManager.get_all_files(min_dir, '.html')
-    print ('# of initial inputs: ', len(inputs))
-    versions = FileManager.get_bisect_csv()
-    for inp in inputs:
-      input_version_pair[inp] = vers
-   
-    finder_dir = output_dir + '_test'
-    if exists(finder_dir):
-        shutil.rmtree(finder_dir)
-    finder = Finder(input_version_pair,finder_dir, num_of_threads, answer)
-    finder.process()
-
-
-    input_version_pair = {}
-    vers = (versions[base], versions[target], answer)
-    for inp in inputs:
-      input_version_pair[inp] = vers
-
-    oracle_dir = output_dir + '_oracle'
-    if exists(oracle_dir):
-        shutil.rmtree(oracle_dir)
-
-    cr = ChromeRegression(input_version_pair, oracle_dir, num_of_threads)
-    cr.process()
-
-    print (cr.experiment_result)
-    print (finder.experiment_result)
+#    input_version_pair = {}
+#    inputs = FileManager.get_all_files(min_dir, '.html')
+#    print ('# of initial inputs: ', len(inputs))
+#    versions = FileManager.get_bisect_csv()
+#    for inp in inputs:
+#      input_version_pair[inp] = vers
+#   
+#    finder_dir = output_dir + '_test'
+#    if exists(finder_dir):
+#        shutil.rmtree(finder_dir)
+#    finder = Finder(input_version_pair,finder_dir, num_of_threads, answer)
+#    finder.process()
+#
+#
+#    input_version_pair = {}
+#    vers = (versions[base], versions[target], answer)
+#    for inp in inputs:
+#      input_version_pair[inp] = vers
+#
+#    oracle_dir = output_dir + '_oracle'
+#    if exists(oracle_dir):
+#        shutil.rmtree(oracle_dir)
+#
+#    cr = ChromeRegression(input_version_pair, oracle_dir, num_of_threads)
+#    cr.process()
+#
+#    print (cr.experiment_result)
+#    print (finder.experiment_result)
 
 if __name__ == "__main__":
     main()

@@ -21,6 +21,15 @@ from chrome_binary import download_chrome_binary
 from domato.grammar import Grammar
 from domato.generator import generate_new_sample 
 
+from contextlib import contextmanager
+
+@contextmanager
+def acquire_timeout(lock, timeout):
+    result = lock.acquire(timeout=timeout)
+    yield result
+    if result:
+        lock.release()
+
 class IOQueue:
     def __init__(self, input_version_pair: dict[str, tuple[int, int, int]]) -> None:
 
@@ -34,20 +43,25 @@ class IOQueue:
         self.num_of_inputs = 0
         self.num_of_outputs = 0
 
+        self.limit = 20000
+
         for testcase, vers in input_version_pair.items():
             self.num_of_inputs += 1
             self.insert_to_queue(vers, testcase, ())
 
+    def reset_lock(self):
+        if self.__queue_lock.locked():
+            self.__queue_lock.release()
+        
+
     def download_chrome(self, commit_version: int) -> None:
         browser_type = 'chrome'
-        #self.__build_lock.acquire()
         self.__queue_lock.acquire()
         parent_dir = FileManager.get_parent_dir(__file__)
         browser_dir = join(parent_dir, browser_type)
         browser_path = join(browser_dir, str(commit_version), browser_type)
         if not exists(browser_path):
             download_chrome_binary(browser_dir, commit_version)
-        #self.__build_lock.release()
         self.__queue_lock.release()
 
     def build_chrome(self, commit_version: int) -> None:
@@ -69,106 +83,106 @@ class IOQueue:
 
 
     def insert_to_queue(self, vers: tuple[int, int, int], html_file: str, hashes: tuple) -> None:
-        self.__queue_lock.acquire()
-        value = [html_file, hashes]
-        self.__preqs[vers].put(value)
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return 
+            value = [html_file, hashes]
+            self.__preqs[vers].put(value)
 
-        if not self.__vers: self.__vers = self.__select_vers()
-        self.__queue_lock.release()
+            if not self.__vers: self.__vers = self.__select_vers()
 
     def pop_from_queue(self) -> Optional[list]:
-
-        value = None
-        self.__queue_lock.acquire()
-        if not self.__vers: 
-            self.__queue_lock.release()
-            return
-
-        vers = self.__vers
-        value = self.__preqs[vers].get()
-        if self.__preqs[vers].empty():
-            self.__preqs.pop(vers)
-            self.__vers = self.__select_vers()
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return 
+            value = None
+            if not self.__vers: 
+                return
         
-        self.num_of_tests += 1
-        if self.num_of_tests % 100 == 0:
-            print (f'test: {self.num_of_tests}, outputs: {self.num_of_outputs}')
-        self.__queue_lock.release()
-        return value
+            vers = self.__vers
+            value = self.__preqs[vers].get()
+            if self.__preqs[vers].empty():
+                self.__preqs.pop(vers)
+                self.__vers = self.__select_vers()
+            
+            self.num_of_tests += 1
+            if self.num_of_tests % 20 == 0:
+                print (f'test: {self.num_of_tests}, outputs: {self.num_of_outputs}')
+            return value
 
     def get_vers(self) -> Optional[tuple[int, int, int]]:
-        self.__queue_lock.acquire()
-        vers = self.__vers
-        self.__queue_lock.release()
-        return vers
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return 
+            vers = self.__vers
+            return vers
 
     def update_postq(self, vers: tuple[int, int, int], html_file: str, hashes: tuple) -> None:
-        self.__queue_lock.acquire()
-        self.num_of_outputs += 1
-        self.__postqs[vers].put((html_file, hashes))
-        self.__queue_lock.release()
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return 
+            self.__postqs[vers].put((html_file, hashes))
+            self.num_of_outputs += 1
+            if self.num_of_outputs >= self.limit:
+                self.__preqs.clear()
+                self.__vers = self.__select_vers()
 
     def move_to_preqs(self):
-        self.__queue_lock.acquire()
-        self.__preqs.clear()
-        self.__preqs = self.__postqs.copy()
-        self.__postqs.clear()
-        self.__vers = self.__select_vers()
-        self.num_of_inputs = self.num_of_outputs
-        self.num_of_tests = 0
-        self.num_of_outputs = 0
-        self.__queue_lock.release()
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return 
+            self.__preqs.clear()
+            self.__preqs = self.__postqs.copy()
+            self.__postqs.clear()
+            self.__vers = self.__select_vers()
+            self.num_of_inputs = self.num_of_outputs
+            self.num_of_tests = 0
+            self.num_of_outputs = 0
 
     def dump_queue(self, dir_path):
-        self.__queue_lock.acquire()
-        Path(dir_path).mkdir(parents=True, exist_ok=True)
-        keys = self.__preqs.keys()
-        for vers in keys:
-            q = self.__preqs[vers]
-            length = q.qsize()
-            for _ in range(length):
-                html_file, hashes = q.get()
-                name = basename(html_file)
-                new_html_file = join(dir_path, name)
-                copyfile(html_file, new_html_file)
-                q.put((new_html_file, hashes))
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return 
 
-        self.__queue_lock.release()
+            Path(dir_path).mkdir(parents=True, exist_ok=True)
+            keys = list(self.__preqs.keys())
+            for vers in keys:
+                q = self.__preqs[vers]
+                length = len(list(q.queue))
+                for _ in range(length):
+                    html_file, hashes = q.get()
+                    name = basename(html_file)
+                    new_html_file = join(dir_path, name)
+                    copyfile(html_file, new_html_file)
+                    q.put((new_html_file, hashes))
+    
 
     def dump_queue_as_csv(self, path):
         header = ['base', 'target', 'ref', 'file']
-        self.__queue_lock.acquire()
-        with open(path, 'w') as fp:
-            c = csv.writer(fp)
-            c.writerow(header)
-            keys = self.__preqs.keys()
-            for key in keys:
-                q = self.__preqs[key]
-                for value in list(q.queue):
-                    html_file, hashes = value
-                    base, target, ref = key
-                    c.writerow([str(base), str(target), str(ref), html_file])
-               
-        self.__queue_lock.release()
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return 
+            with open(path, 'w') as fp:
+                c = csv.writer(fp)
+                c.writerow(header)
+                keys = self.__preqs.keys()
+                for key in keys:
+                    q = self.__preqs[key]
+                    for value in list(q.queue):
+                        html_file, hashes = value
+                        base, target, ref = key
+                        c.writerow([str(base), str(target), str(ref), html_file])
 
 
     def dump_queue_with_sort(self, dir_path):
-        self.__queue_lock.acquire()
-        Path(dir_path).mkdir(parents=True, exist_ok=True)
-        keys = self.__preqs.keys()
-        for vers in keys:
-            q = self.__preqs[vers]
-            length = q.qsize()
-            cur_path = join(dir_path, str(vers[1]))
-            Path(cur_path).mkdir(parents=True, exist_ok=True)
-            for _ in range(length):
-                html_file, hashes = q.get()
-                name = basename(html_file)
-                new_html_file = join(cur_path, name)
-                copyfile(html_file, new_html_file)
-                q.put((new_html_file, hashes))
-
-        self.__queue_lock.release()
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return 
+            Path(dir_path).mkdir(parents=True, exist_ok=True)
+            keys = self.__preqs.keys()
+            for vers in keys:
+                q = self.__preqs[vers]
+                length = q.qsize()
+                cur_path = join(dir_path, str(vers[1]))
+                Path(cur_path).mkdir(parents=True, exist_ok=True)
+                for _ in range(length):
+                    html_file, hashes = q.get()
+                    name = basename(html_file)
+                    new_html_file = join(cur_path, name)
+                    copyfile(html_file, new_html_file)
+                    q.put((new_html_file, hashes))
 
 
 class FileManager:

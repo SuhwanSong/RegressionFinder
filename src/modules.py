@@ -9,6 +9,7 @@ from typing import Optional
 from helper import IOQueue
 from helper import ImageDiff
 from helper import FileManager
+
 from threading import Thread
 
 from bisect import bisect
@@ -28,8 +29,6 @@ class CrossVersion(Thread):
         self.helper = helper
         self.saveshot = False
         self.fnr = True
-
-        self.limit = 10000
 
     def report_mode(self) -> None:
         self.saveshot = True
@@ -51,13 +50,13 @@ class CrossVersion(Thread):
         num_of_flake = 0
         num_of_flake2 = 0
         for br in self.__br_list: 
-            print (br.time)
-            print (br.count)
+            #print (br.time)
+            #print (br.count)
             num_of_flake += br.flak['BAD HTML']
             num_of_flake2 += br.flak['BAD HTML DIFF']
             br.kill_browser()
         self.__br_list.clear()
-        print ('NUM_OF_FLAKE', num_of_flake , num_of_flake2)
+        #print ('NUM_OF_FLAKE', num_of_flake , num_of_flake2)
 
     def cross_version_test_html(self, html_file: str) -> Optional[list]:
         img_hashes = []
@@ -86,6 +85,7 @@ class CrossVersion(Thread):
         cur_vers = None
         hpr = self.helper
         while True:
+
             vers = hpr.get_vers()
             if not vers: break
 
@@ -100,14 +100,10 @@ class CrossVersion(Thread):
                 hpr.download_chrome(cur_vers[1])
                 if not self.start_browsers(cur_vers):
                     continue
-
-
+            
             hashes = self.cross_version_test_html_nth(html_file)
             if self.is_bug(hashes): 
-                if hpr.num_of_outputs < self.limit:
-                    hpr.update_postq(vers, html_file, hashes)
-                else:
-                    break
+                hpr.update_postq(vers, html_file, hashes)
 
         self.stop_browsers()
         print ('total', time.time() - start)
@@ -179,8 +175,8 @@ class Bisecter(Thread):
         super().__init__()
         self.helper = helper
         self.ref_br = None
-        self.__version_list = []
-        self.__index_hash = {}
+        self.version_list = []
+        self.index_hash = {}
         self.saveshot = False
         self.cur_mid = None
 
@@ -195,17 +191,16 @@ class Bisecter(Thread):
             self.ref_br = None
 
     def set_version_list(self) -> None:
-        self.__version_list = FileManager.get_bisect_csv()
-        self.__index_hash.clear()
-        for idx, ver in enumerate(self.__version_list):
-          self.__index_hash[ver] = idx
+        self.version_list = FileManager.get_bisect_csv()
+        self.index_hash.clear()
+        for idx, ver in enumerate(self.version_list):
+          self.index_hash[ver] = idx
 
     def convert_to_ver(self, index: int) -> int:
-        return self.__version_list[index]
+        return self.version_list[index]
 
     def convert_to_index(self, ver: int) -> int:
-        #return bisect(self.__version_list, ver) 
-        return self.__index_hash[ver]
+        return self.index_hash[ver]
 
     def get_chrome(self, ver: int) -> None:
         self.helper.download_chrome(ver)
@@ -538,7 +533,7 @@ class R2Z2:
             th.start()
 
         for th in threads:
-            th.join()
+            th.join(timeout=3600 * 24)
 
         end = time.time()
         elapsed = end - start
@@ -695,23 +690,25 @@ class Preprocesser:
 
         for th in threads:
             th.start()
-
         for th in threads:
             th.join()
+
+        self.ioq.reset_lock()
 
         end = time.time()
         elapsed = end - start
         elapsed_time = str(timedelta(seconds=elapsed))
         print (f'{class_name} stage ends...')
-        print (elapsed_time)
+
         if not report:
             self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
         self.ioq.move_to_preqs()
+        print (elapsed_time)
         if not report:
             dirname = class_name
             dir_path = os.path.join(self.out_dir, dirname)
             self.ioq.dump_queue(dir_path)
-            self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
+            #self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
 
     def process(self) -> None:
