@@ -106,7 +106,7 @@ class CrossVersion(Thread):
                 hpr.update_postq(vers, html_file, hashes)
 
         self.stop_browsers()
-        print ('total', time.time() - start)
+        #print ('total', time.time() - start)
 
 
 class Oracle(Thread):
@@ -175,10 +175,10 @@ class Bisecter(Thread):
         super().__init__()
         self.helper = helper
         self.ref_br = None
-        self.version_list = {}
-        self.index_hash = {}
         self.saveshot = False
         self.cur_mid = None
+
+        self.build = False
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
@@ -189,26 +189,6 @@ class Bisecter(Thread):
         if self.ref_br:
             self.ref_br.kill_browser()
             self.ref_br = None
-
-    def set_version_list(self, html_file) -> None:
-        verlist = FileManager.get_bisect_csv()
-        if html_file not in self.version_list:
-            self.version_list[html_file] = list(verlist)
-            self.index_hash[html_file] = {}
-            for idx, ver in enumerate(self.version_list[html_file]):
-                self.index_hash[html_file][ver] = idx
-
-    def convert_to_ver(self, html_file, index: int) -> int:
-        return self.version_list[html_file][index]
-
-    def convert_to_index(self, html_file, ver: int) -> int:
-        return self.index_hash[html_file][ver]
-
-    def pop_ver_from_list(self, html_file, ver):
-        self.version_list[html_file].remove(ver)
-        self.index_hash[html_file] = {}
-        for idx, ver in enumerate(self.version_list[html_file]):
-            self.index_hash[html_file][ver] = idx
 
     def get_chrome(self, ver: int) -> None:
         self.helper.download_chrome(ver)
@@ -226,28 +206,29 @@ class Bisecter(Thread):
                 break
             #print (vers)
 
-            result = hpr.pop_from_queue()
+            result = hpr.pop_from_queue(False)
             if not result: 
                 break
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
-            self.set_version_list(html_file)
+            hpr.set_version_list(html_file, self.build)
 
             start, end, ref = vers
             if start >= end: 
                 print (html_file, 'start and end are the same;')
                 continue
 
-            start_idx = self.convert_to_index(html_file, start)
-            end_idx = self.convert_to_index(html_file, end)
+            start_idx = hpr.convert_to_index(html_file, start)
+            end_idx = hpr.convert_to_index(html_file, end)
 
-#            if start_idx + 1 == end_idx:
-#                hpr.update_postq((start, end, ref), html_file, hashes)
+            if start_idx + 1 == end_idx:
+                hpr.update_postq(vers, html_file, hashes)
+                continue
 
             mid_idx = (start_idx + end_idx) // 2
-            mid = self.convert_to_ver(html_file, mid_idx)
+            mid = hpr.convert_to_ver(html_file, mid_idx)
             self.cur_mid = mid
             if cur_mid != mid:
                 cur_mid = mid
@@ -257,8 +238,6 @@ class Bisecter(Thread):
 
             ref_hash = self.get_pixel_from_html(html_file)
             if ref_hash is None:
-                self.pop_ver_from_list(html_file, mid)
-                hpr.insert_to_queue((start, end, ref), html_file, hashes)
                 continue
 
             elif not ImageDiff.diff_images(hashes[0], ref_hash):
@@ -266,19 +245,42 @@ class Bisecter(Thread):
                     hpr.update_postq((mid, end, ref), html_file, hashes)
                     #print (html_file, mid, end, 'postq 1')
                     continue
-                low = self.convert_to_ver(html_file, mid_idx)
+                low = hpr.convert_to_ver(html_file, mid_idx)
                 high = end
 
-            else:
-            #elif not ImageDiff.diff_images(hashes[1], ref_hash):
+            elif not ImageDiff.diff_images(hashes[1], ref_hash):
                 if mid_idx - 1 == start_idx:
                     hpr.update_postq((start, mid, ref), html_file, hashes)
                     #print (html_file, start, mid, 'postq 2')
                     continue
                 low = start
-                high = self.convert_to_ver(html_file, mid_idx)
-
+                high = hpr.convert_to_ver(html_file, mid_idx)
+            else:
+                continue
             hpr.insert_to_queue((low, high, ref), html_file, hashes)
+#            if ref_hash is None:
+#                hpr.pop_index_from_list(html_file, mid_idx)
+#                hpr.insert_to_queue((start, end, ref), html_file, hashes)
+#                continue
+#
+#            elif not ImageDiff.diff_images(hashes[0], ref_hash):
+#                if mid_idx + 1 == end_idx:
+#                    hpr.update_postq((mid, end, ref), html_file, hashes)
+#                    #print (html_file, mid, end, 'postq 1')
+#                    continue
+#                low = hpr.convert_to_ver(html_file, mid_idx)
+#                high = end
+#
+#            else:
+#            #elif not ImageDiff.diff_images(hashes[1], ref_hash):
+#                if mid_idx - 1 == start_idx:
+#                    hpr.update_postq((start, mid, ref), html_file, hashes)
+#                    #print (html_file, start, mid, 'postq 2')
+#                    continue
+#                low = start
+#                high = hpr.convert_to_ver(html_file, mid_idx)
+#
+#            hpr.insert_to_queue((low, high, ref), html_file, hashes)
 
         self.stop_ref_browser()
 
@@ -287,14 +289,7 @@ class BisecterBuild(Bisecter):
     def __init__(self, helper: IOQueue) -> None:
         super().__init__(helper)
 
-    def set_version_list(self) -> None:
-        pass
-
-    def convert_to_ver(self, index: int) -> int:
-        return index
-
-    def convert_to_index(self, ver: int) -> int:
-        return ver
+        self.build = True
 
     def get_chrome(self, ver: int) -> None:
         self.helper.build_chrome(ver)
@@ -540,24 +535,25 @@ class R2Z2:
 
         for th in threads:
             th.start()
-
         for th in threads:
-            th.join(timeout=3600 * 24)
+            th.join()
+
+        self.ioq.reset_lock()
 
         end = time.time()
         elapsed = end - start
         elapsed_time = str(timedelta(seconds=elapsed))
         print (f'{class_name} stage ends...')
-        print (elapsed_time)
+
         if not report:
             self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
         self.ioq.move_to_preqs()
+        print (elapsed_time)
         if not report:
             dirname = class_name
             dir_path = os.path.join(self.out_dir, dirname)
-            self.ioq.dump_queue_with_sort(dir_path)
-            self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
-
+            self.ioq.dump_queue(dir_path)
+            #self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
     def process(self) -> None:
         tester = [
@@ -614,7 +610,7 @@ class Finder(R2Z2):
 
         ref_br.kill_browser()
         self.ioq.move_to_preqs()
-        dir_path = os.path.join(self.out_dir, 'answer')
+        dir_path = os.path.join(self.out_dir, 'Report')
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
@@ -631,6 +627,7 @@ class Finder(R2Z2):
         for test in tester: 
             self.test_wrapper(test)
 
+        self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
         end = time.time()
         elapsed = end - start
         elapsed_time = str(timedelta(seconds=elapsed))
@@ -712,12 +709,11 @@ class Preprocesser:
         if not report:
             self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
         self.ioq.move_to_preqs()
-        print (elapsed_time)
+        #print (elapsed_time)
         if not report:
             dirname = class_name
             dir_path = os.path.join(self.out_dir, dirname)
             self.ioq.dump_queue(dir_path)
-            #self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
 
     def process(self) -> None:

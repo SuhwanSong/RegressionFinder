@@ -21,7 +21,12 @@ class Browser:
                     '--headless',
                     '--disable-seccomp-sandbox --no-sandbox',
                     '--disable-logging',
-                    '--disable-gpu'
+                    '--disable-gpu',
+#                    '--disable-skia-runtime-opts',
+#                    '--incognito',
+#                    '--disable-partial-raster',
+#                    '--deterministic-mode',
+#                    '--disable-threaded-compositing',
                     ]
             self.options = webdriver.chrome.options.Options()
 
@@ -126,13 +131,17 @@ class Browser:
 
     def run_html(self, html_file: str, fn_reduction: bool = False):
         start = time.time()
-        if self.__num_of_run % 1000 == 0:
+        if self.__num_of_run % 1000 == 1000 - 1:
             self.kill_browser()
             self.setup_browser()
         try:
+#            self.browser.get('file:///tmp/xx.html')
+#            self.browser.get('file://' + abspath(html_file))
+#
+            self.browser.get('file:///tmp/xx.html')
             self.browser.get('file://' + abspath(html_file))
         except Exception as e:
-            print ('Error in run_html')
+            #print ('Error in run_html', e)
             self.kill_browser()
             self.setup_browser()
             return False
@@ -146,14 +155,19 @@ class Browser:
         self.__num_of_run += 1
         return True
 
-    def _get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
+    def _get_hash_from_html(self, html_file, name, save_shot: bool = False, fn_reduction: bool = False):
+
         ret = self.run_html(html_file, fn_reduction)
-        if not ret: return 
+        if not ret: 
+            return 
 
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
+        #screenshot_name = f'{name_noext}_{self.version}_{name}.png' if save_shot else None
+        time.sleep(0.03)
         hash_v = self.__screenshot_and_hash(screenshot_name)
-        for _ in range(0):
+        for _ in range(1):
+            time.sleep(0.03)
             if ImageDiff.diff_images(hash_v, self.__screenshot_and_hash(screenshot_name)):
                 self.flak['BAD'] += 1
                 return
@@ -161,15 +175,17 @@ class Browser:
         return hash_v
 
     def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
-        hash_v = self._get_hash_from_html(html_file, save_shot, fn_reduction)
-        for _ in range(0):
-            if hash_v is None: 
+        hash_v = self._get_hash_from_html(html_file, 'base', save_shot, fn_reduction)
+        if hash_v is None: return 
+        for _ in range(1):
+            ret = self._get_hash_from_html(html_file, _, save_shot, fn_reduction)
+            if ret is None: 
                 self.flak['BAD HTML'] += 1
-                print ('bad', html_file)
+                print ('CRASH', self.version ,_ + 1, html_file, hash_v, ret)
                 return None
-            elif ImageDiff.diff_images(hash_v, self._get_hash_from_html(html_file, save_shot, fn_reduction)): 
+            elif ImageDiff.diff_images(hash_v, ret): 
                 self.flak['BAD HTML DIFF'] += 1
-                print ('bad diff', html_file)
+                print ('PIXEL DIFF', self.version ,_ + 1, html_file, hash_v, ret)
                 return None
         return hash_v
 

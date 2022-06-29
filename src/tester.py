@@ -52,20 +52,20 @@ def main():
         Preprocesser(input_version_pair, output_dir, num_of_threads).process()
 
 
-#    input_version_pair = {}
-#    inputs = FileManager.get_all_files(min_dir, '.html')
-#    print ('# of initial inputs: ', len(inputs))
-#    versions = FileManager.get_bisect_csv()
-#    for inp in inputs:
-#      input_version_pair[inp] = vers
-#   
-#    finder_dir = output_dir + '_test'
-#    if exists(finder_dir):
-#        shutil.rmtree(finder_dir)
-#    finder = Finder(input_version_pair,finder_dir, num_of_threads, answer)
-#    finder.process()
-#
-#
+    input_version_pair = {}
+    inputs = FileManager.get_all_files(min_dir, '.html')
+    print ('# of initial inputs: ', len(inputs))
+    versions = FileManager.get_bisect_csv()
+    for inp in inputs:
+      input_version_pair[inp] = vers
+   
+    finder_dir = output_dir + '_test'
+    if exists(finder_dir):
+        shutil.rmtree(finder_dir)
+    finder = Finder(input_version_pair,finder_dir, num_of_threads, answer)
+    finder.process()
+
+
 #    input_version_pair = {}
 #    vers = (versions[base], versions[target], answer)
 #    for inp in inputs:

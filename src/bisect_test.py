@@ -12,6 +12,7 @@ from collections import deque
 class BisectTester(Bisecter):
     def __init__(self, helper: IOQueue) -> None:
         super().__init__(helper)
+        self.build = True
 
         self.func = None
 
@@ -20,13 +21,6 @@ class BisectTester(Bisecter):
 
     def stop_ref_browser(self) -> None:
         pass
-
-    def set_version_list(self, html_file) -> None:
-        if html_file not in self.version_list:
-            self.version_list[html_file] = list(range(20))
-            self.index_hash[html_file] = {}
-            for idx, ver in enumerate(self.version_list[html_file]):
-                self.index_hash[html_file][ver] = idx
 
     def get_chrome(self, ver: int) -> None:
         pass
@@ -50,6 +44,8 @@ class TestBisecter(unittest.TestCase):
         print ('test 1 starts')
         empty = {}
         ioq = IOQueue(empty)
+        ioq.start_v = 5
+        ioq.end_v = 9
         ioq.insert_to_queue((5, 9, None), 'test1', (fake.png_a, fake.png_b))
 
         def getPngByRevisionForTesting(rev):
@@ -76,6 +72,8 @@ class TestBisecter(unittest.TestCase):
         print ('\ntest 2 starts')
         empty = {}
         ioq = IOQueue(empty)
+        ioq.start_v = 5
+        ioq.end_v = 9
         ioq.insert_to_queue((5, 9, None), 'test2', (fake.png_a, fake.png_b))
 
         def getPngByRevisionForTesting(rev):
@@ -102,6 +100,8 @@ class TestBisecter(unittest.TestCase):
         print ('\ntest 3 starts')
         empty = {}
         ioq = IOQueue(empty)
+        ioq.start_v = 5
+        ioq.end_v = 9
         ioq.insert_to_queue((5, 9, None), 'test3', (fake.png_a, fake.png_b))
 
         def getPngByRevisionForTesting(rev):
@@ -129,6 +129,8 @@ class TestBisecter(unittest.TestCase):
         print ('\ntest 4 starts')
         empty = {}
         ioq = IOQueue(empty)
+        ioq.start_v = 5
+        ioq.end_v = 6
         ioq.insert_to_queue((5, 6, None), 'test4', (fake.png_a, fake.png_b))
 
         def getPngByRevisionForTesting(rev):
@@ -153,6 +155,8 @@ class TestBisecter(unittest.TestCase):
         print ('\ntest 5 starts')
         empty = {}
         ioq = IOQueue(empty)
+        ioq.start_v = 5
+        ioq.end_v = 7
         ioq.insert_to_queue((5, 7, None), 'test5', (fake.png_a, fake.png_b))
 
         def getPngByRevisionForTesting(rev):
@@ -178,6 +182,8 @@ class TestBisecter(unittest.TestCase):
         print ('\ntest 6 starts')
         empty = {}
         ioq = IOQueue(empty)
+        ioq.start_v = 5
+        ioq.end_v = 8
         ioq.insert_to_queue((5, 8, None), 'test6', (fake.png_a, fake.png_b))
 
         def getPngByRevisionForTesting(rev):
@@ -205,6 +211,8 @@ class TestBisecter(unittest.TestCase):
         print ('\ntest 7 starts')
         empty = {}
         ioq = IOQueue(empty)
+        ioq.start_v = 5
+        ioq.end_v = 9
         ioq.insert_to_queue((5, 9, None), 'test7', (fake.png_a, fake.png_b))
 
         def getPngByRevisionForTesting(rev):
@@ -232,6 +240,8 @@ class TestBisecter(unittest.TestCase):
         print ('\ntest 8 starts')
         empty = {}
         ioq = IOQueue(empty)
+        ioq.start_v = 5
+        ioq.end_v = 9
         ioq.insert_to_queue((5, 9, None), 'test8', (fake.png_a, fake.png_b))
 
         def getPngByRevisionForTesting(rev):
