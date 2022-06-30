@@ -7,7 +7,6 @@ from os.path import join, dirname, abspath, exists, basename
 from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
-from imagehash import phash
 
 
 from queue import Queue
@@ -47,7 +46,7 @@ class IOQueue:
         self.num_of_inputs = 0
         self.num_of_outputs = 0
 
-        self.limit = 500
+        self.limit = 10000
 
         self.version_list = {}
 

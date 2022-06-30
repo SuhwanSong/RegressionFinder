@@ -66,20 +66,20 @@ def main():
     finder.process()
 
 
-#    input_version_pair = {}
-#    vers = (versions[base], versions[target], answer)
-#    for inp in inputs:
-#      input_version_pair[inp] = vers
-#
-#    oracle_dir = output_dir + '_oracle'
-#    if exists(oracle_dir):
-#        shutil.rmtree(oracle_dir)
-#
-#    cr = ChromeRegression(input_version_pair, oracle_dir, num_of_threads)
-#    cr.process()
-#
-#    print (cr.experiment_result)
-#    print (finder.experiment_result)
+    input_version_pair = {}
+    vers = (versions[base], versions[target], answer)
+    for inp in inputs:
+      input_version_pair[inp] = vers
+
+    oracle_dir = output_dir + '_oracle'
+    if exists(oracle_dir):
+        shutil.rmtree(oracle_dir)
+
+    cr = ChromeRegression(input_version_pair, oracle_dir, num_of_threads)
+    cr.process()
+
+    print (cr.experiment_result)
+    print (finder.experiment_result)
 
 if __name__ == "__main__":
     main()

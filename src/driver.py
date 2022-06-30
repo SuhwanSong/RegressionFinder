@@ -19,14 +19,9 @@ class Browser:
         if browser_type == 'chrome':
             options = [
                     '--headless',
-                    '--disable-seccomp-sandbox --no-sandbox',
+                    '--disable-seccomp-sandbox',
                     '--disable-logging',
                     '--disable-gpu',
-#                    '--disable-skia-runtime-opts',
-#                    '--incognito',
-#                    '--disable-partial-raster',
-#                    '--deterministic-mode',
-#                    '--disable-threaded-compositing',
                     ]
             self.options = webdriver.chrome.options.Options()
 
@@ -59,7 +54,7 @@ class Browser:
     def setup_browser(self):
         self.__num_of_run = 0
         start = time.time()
-        for _ in range(10):
+        for _ in range(5):
             try:
                 if self.__browser_type == 'chrome':
                     self.browser = webdriver.Chrome(options=self.options,
@@ -72,12 +67,16 @@ class Browser:
                 break
 
             except Exception as e:
-                pass
+                continue
+        #TODO
+        if self.browser is None: 
+
+            return False
 
         WIDTH = getenv('WIDTH')
         WIDTH = 800 if not WIDTH else int(WIDTH)
         HEIGHT = getenv('HEIGHT')
-        HEIGHT = 600 if not HEIGHT else int(HEIGHT)
+        HEIGHT = 300 if not HEIGHT else int(HEIGHT)
         TIMEOUT = 10
 
         self.__set_viewport_size(WIDTH, HEIGHT)
@@ -95,25 +94,34 @@ class Browser:
         """, width, height)
         self.browser.set_window_size(*window_size)
 
+
+    def get_screenshot(self):
+        for attempt in range(5):
+            if attempt == 4:
+                self.kill_browser()
+                self.setup_browser()
+            try:
+                png = self.browser.get_screenshot_as_png()
+                return png
+            except Exception as e:
+                continue
+
+        return None 
+
     def __screenshot_and_hash(self, name=None):
-        try:
-            start = time.time()
-            if name:
-                png = self.browser.get_screenshot_as_png()
-                ImageDiff.save_image(name, png)
+        
+        start = time.time()
+        png = self.get_screenshot()
+        if name:
+            ImageDiff.save_image(name, png)
+        self.time['getscreenshot'] += time.time() - start
+        self.count['getscreenshot'] += 1
 
-            else:
-                png = self.browser.get_screenshot_as_png()
-            self.time['getscreenshot'] += time.time() - start
-            self.count['getscreenshot'] += 1
-
-            start = time.time()
-            pixels = ImageDiff.get_phash(png)
-            self.time['convertscreenshot'] += time.time() - start
-            self.count['convertscreenshot'] += 1
-            return pixels
-        except Exception as e:
-            return
+        start = time.time()
+        pixels = ImageDiff.get_phash(png)
+        self.time['convertscreenshot'] += time.time() - start
+        self.count['convertscreenshot'] += 1
+        return pixels
 
     def kill_browser(self):
         if self.browser and self.browser.session_id:
@@ -129,63 +137,35 @@ class Browser:
         except Exception as e:
             return None
 
-    def run_html(self, html_file: str, fn_reduction: bool = False):
-        start = time.time()
-        if self.__num_of_run % 1000 == 1000 - 1:
-            self.kill_browser()
-            self.setup_browser()
-        try:
-#            self.browser.get('file:///tmp/xx.html')
-#            self.browser.get('file://' + abspath(html_file))
-#
-            self.browser.get('file:///tmp/xx.html')
-            self.browser.get('file://' + abspath(html_file))
-        except Exception as e:
-            #print ('Error in run_html', e)
-            self.kill_browser()
-            self.setup_browser()
-            return False
-        if fn_reduction:
-            s1 = time.time()
-            self.exec_script(AHEM_FONT) # baseline
-            self.exec_script(ALLSET) # baseline
-            self.time['SCRIPT'] += time.time() - s1
-        self.time['runhtml'] += time.time() - start
-        self.count['runhtml'] += 1
+    def repeatly_run(self, html_file):
+        for attempt in range(5):
+            if attempt == 4:
+                self.kill_browser()
+                self.setup_browser()
+            try:
+                self.browser.get('file://' + abspath(html_file))
+                return 
+            except Exception as e:
+                continue
+
+        return None 
+
+    def run_html(self, html_file: str):
+        self.repeatly_run(html_file)
         self.__num_of_run += 1
         return True
 
-    def _get_hash_from_html(self, html_file, name, save_shot: bool = False, fn_reduction: bool = False):
+    def _get_hash_from_html(self, html_file, save_shot: bool = False):
 
-        ret = self.run_html(html_file, fn_reduction)
-        if not ret: 
-            return 
+        ret = self.run_html(html_file)
+        if not ret: return 
 
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
-        #screenshot_name = f'{name_noext}_{self.version}_{name}.png' if save_shot else None
-        time.sleep(0.03)
         hash_v = self.__screenshot_and_hash(screenshot_name)
-        for _ in range(1):
-            time.sleep(0.03)
-            if ImageDiff.diff_images(hash_v, self.__screenshot_and_hash(screenshot_name)):
-                self.flak['BAD'] += 1
-                return
-        self.flak['TOTAL'] += 1
         return hash_v
 
-    def get_hash_from_html(self, html_file, save_shot: bool = False, fn_reduction: bool = False):
-        hash_v = self._get_hash_from_html(html_file, 'base', save_shot, fn_reduction)
-        if hash_v is None: return 
-        for _ in range(1):
-            ret = self._get_hash_from_html(html_file, _, save_shot, fn_reduction)
-            if ret is None: 
-                self.flak['BAD HTML'] += 1
-                print ('CRASH', self.version ,_ + 1, html_file, hash_v, ret)
-                return None
-            elif ImageDiff.diff_images(hash_v, ret): 
-                self.flak['BAD HTML DIFF'] += 1
-                print ('PIXEL DIFF', self.version ,_ + 1, html_file, hash_v, ret)
-                return None
+    def get_hash_from_html(self, html_file, save_shot: bool = False):
+        hash_v = self._get_hash_from_html(html_file, save_shot)
         return hash_v
 

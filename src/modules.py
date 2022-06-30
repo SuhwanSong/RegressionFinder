@@ -28,11 +28,9 @@ class CrossVersion(Thread):
 
         self.helper = helper
         self.saveshot = False
-        self.fnr = True
 
     def report_mode(self) -> None:
         self.saveshot = True
-        self.fnr = True
 
     def get_newer_browser(self) -> Browser:
         return self.__br_list[-1] if self.__br_list else None
@@ -61,7 +59,7 @@ class CrossVersion(Thread):
     def cross_version_test_html(self, html_file: str) -> Optional[list]:
         img_hashes = []
         for br in self.__br_list:
-            hash_v = br.get_hash_from_html(html_file, self.saveshot, self.fnr)
+            hash_v = br.get_hash_from_html(html_file, self.saveshot)
             if hash_v is None: 
                 return
 
@@ -117,11 +115,9 @@ class Oracle(Thread):
         self.ref_br_type = 'firefox'
 
         self.saveshot = False
-        self.fnr = True
 
     def report_mode(self) -> None:
         self.saveshot = True
-        self.fnr = True
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
@@ -157,7 +153,7 @@ class Oracle(Thread):
                 if not self.start_ref_browser(cur_refv):
                     continue
 
-            ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot, self.fnr)
+            ref_hash = self.ref_br.get_hash_from_html(html_file, self.saveshot)
             if ref_hash is not None and self.is_regression(hashes, ref_hash):
                 hpr.update_postq(vers, html_file, hashes)
 
@@ -194,7 +190,7 @@ class Bisecter(Thread):
         self.helper.download_chrome(ver)
 
     def get_pixel_from_html(self, html_file): 
-        return self.ref_br.get_hash_from_html(html_file, self.saveshot, True)
+        return self.ref_br.get_hash_from_html(html_file, self.saveshot)
 
     def run(self) -> None:
         cur_mid = None
@@ -386,6 +382,8 @@ class Minimizer(CrossVersion):
 
         min_lines = style_lines
         for i in range(len(style_lines)):
+            if 'DO NOT REMOVE' in style_lines[i]: 
+                break
             min_line = self.__minimize_sline(i, min_lines)
             min_lines[i] = min_line
 
@@ -479,7 +477,7 @@ class Minimizer(CrossVersion):
                     FileManager.write_file(self.__temp_file, self.__min_html)
 
     def __minimizing(self):
-        self.__minimize_line()
+        #self.__minimize_line()
         self.__minimize_style()
         self.__minimize_dom()
 
@@ -602,7 +600,7 @@ class Finder(R2Z2):
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
-            ref_hash = ref_br.get_hash_from_html(html_file, True, True)
+            ref_hash = ref_br.get_hash_from_html(html_file, True)
             if ref_hash is None:
                 continue
             if not ImageDiff.diff_images(hashes[0], ref_hash):
