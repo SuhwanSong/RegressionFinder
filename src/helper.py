@@ -8,6 +8,7 @@ from PIL import Image
 from PIL import ImageChops
 from io import BytesIO
 
+import time
 
 from queue import Queue
 from random import choice
@@ -55,6 +56,9 @@ class IOQueue:
             self.insert_to_queue(vers, testcase, ())
             self.start_v = vers[0]
             self.end_v = vers[1]
+
+
+        self.start_time = time.time()
 
     def reset_lock(self):
         if self.__queue_lock.locked():
@@ -116,7 +120,9 @@ class IOQueue:
                 self.__vers = self.__select_vers()
             self.num_of_tests += 1
             if self.num_of_tests % 20 == 0:
-                print (f'test: {self.num_of_tests}, outputs: {self.num_of_outputs}')
+                tt = (time.time() - self.start_time) / 60
+                ot = self.num_of_tests / tt
+                print (f'test: {self.num_of_tests}, outputs: {self.num_of_outputs}, time: {tt}, test / time: {ot}')
             return value
 
     def get_vers(self) -> Optional[tuple[int, int, int]]:

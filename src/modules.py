@@ -694,8 +694,18 @@ class Preprocesser:
 
         for th in threads:
             th.start()
-        for th in threads:
-            th.join()
+
+        kill_all = False
+        while not kill_all:
+            time.sleep(10)
+            for th in threads:
+                if not th.is_alive():
+                    print ('kill all ')
+                    kill_all = True
+
+        for i, th in enumerate(threads):
+            print (i, 'join')
+            th.join(timeout=120)
 
         self.ioq.reset_lock()
 
