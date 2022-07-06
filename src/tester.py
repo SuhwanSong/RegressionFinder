@@ -30,6 +30,11 @@ def main():
 
     import bisect
 
+    from pyvirtualdisplay import Display
+
+    disp = Display(size=(1200, 800))
+    disp.start()
+
     base = bisect.bisect_left(versions, milestone[args.base - 1]) - 1
     target = bisect.bisect_left(versions, milestone[args.target - 1]) - 1
     answer = bisect.bisect_left(versions, milestone[args.answer]) - 1
@@ -80,6 +85,7 @@ def main():
 
     print (cr.experiment_result)
     print (finder.experiment_result)
+    disp.stop()
 
 if __name__ == "__main__":
     main()

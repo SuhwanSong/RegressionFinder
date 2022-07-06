@@ -5,8 +5,8 @@ from pathlib import Path
 from helper import ImageDiff
 from helper import FileManager
 
-from jshelper import AHEM_FONT, NOSCROLLBAR
-from jshelper import ALLSET, RESET, UNSET, NORM, FFAHEM, FAHEM, TEXTAREA 
+#from jshelper import AHEM_FONT, NOSCROLLBAR
+#from jshelper import ALLSET, RESET, UNSET, NORM, FFAHEM, FAHEM, TEXTAREA 
 
 from selenium import webdriver
 
