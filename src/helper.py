@@ -51,6 +51,8 @@ class IOQueue:
 
         self.version_list = {}
 
+        self.monitor = defaultdict(float)
+
         for testcase, vers in input_version_pair.items():
             self.num_of_inputs += 1
             self.insert_to_queue(vers, testcase, ())
@@ -63,7 +65,7 @@ class IOQueue:
     def reset_lock(self):
         if self.__queue_lock.locked():
             self.__queue_lock.release()
-        
+
 
     def download_chrome(self, commit_version: int) -> None:
         browser_type = 'chrome'
@@ -236,6 +238,26 @@ class IOQueue:
             print ('version delete', html_file, index, v)
 
 
+    def record_current_test(self, thread_id, br, html_file):
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return
+            self.monitor[(thread_id, br.version, html_file)] = (br, time.time())
+
+    def delete_record(self, thread_id, br, html_file):
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return
+            self.monitor.pop((thread_id, br.version, html_file), None)
+
+    def monitoring(self):
+        with acquire_timeout(self.__queue_lock, 1000) as acquired:
+            if not acquired: return
+            cur_time = time.time()
+            for cur_test in self.monitor:
+                br, t = self.monitor[cur_test]
+                if cur_time - t > 40:
+                    print (f'Chrome {cur_test[1]} in thread {cur_test[0]} is hanging ...', cur_test[2])
+
+
 class FileManager:
     def get_all_files(root, ext=None):
         paths = []
@@ -272,34 +294,6 @@ class FileManager:
     def read_file(name):
         with open(name, 'r') as fp:
             return fp.read()
-
-
-class Generator:
-    def __init__(self):
-        domato_dir = join(dirname(abspath(__file__)), 'domato')
-        f = open(os.path.join(domato_dir, 'template.html'))
-        self.template = f.read()
-        f.close()
-        htmlgrammar = Grammar()
-        err = htmlgrammar.parse_from_file(os.path.join(domato_dir, 'html.txt'))
-        if err > 0:
-            print('There were errors parsing grammar')
-            return
-        cssgrammar = Grammar()
-        err = cssgrammar.parse_from_file(os.path.join(domato_dir, 'css.txt'))
-        if err > 0:
-            print('There were errors parsing grammar')
-            return
-        htmlgrammar.add_import('cssgrammar', cssgrammar)
-        self.htmlgrammar = htmlgrammar
-        self.cssgrammar = cssgrammar
-
-    def generate_html(self):
-        return generate_new_sample(
-                self.template, 
-                self.htmlgrammar, 
-                self.cssgrammar, 
-                None)
 
 import hashlib
 class ImageDiff:

@@ -11,6 +11,7 @@ from helper import ImageDiff
 from helper import FileManager
 
 from threading import Thread
+from threading import current_thread
 
 from bisect import bisect
 
@@ -48,22 +49,23 @@ class CrossVersion(Thread):
         num_of_flake = 0
         num_of_flake2 = 0
         for br in self.__br_list: 
-            #print (br.time)
-            #print (br.count)
             num_of_flake += br.flak['BAD HTML']
             num_of_flake2 += br.flak['BAD HTML DIFF']
             br.kill_browser()
         self.__br_list.clear()
-        #print ('NUM_OF_FLAKE', num_of_flake , num_of_flake2)
 
     def cross_version_test_html(self, html_file: str) -> Optional[list]:
         img_hashes = []
+
+        thread_id = current_thread()
         for br in self.__br_list:
+            self.helper.record_current_test(thread_id, br, html_file)
             hash_v = br.get_hash_from_html(html_file, self.saveshot)
             if hash_v is None: 
                 return
 
             img_hashes.append(hash_v)
+            self.helper.delete_record(thread_id, br, html_file)
 
         return img_hashes
 
@@ -101,7 +103,7 @@ class CrossVersion(Thread):
             
             hashes = self.cross_version_test_html_nth(html_file)
             if self.is_bug(hashes): 
-                hpr.update_postq(vers, html_file, hashes)
+              hpr.update_postq(vers, html_file, hashes)
 
         self.stop_browsers()
         #print ('total', time.time() - start)
@@ -695,17 +697,12 @@ class Preprocesser:
         for th in threads:
             th.start()
 
-        kill_all = False
-        while not kill_all:
-            time.sleep(10)
-            for th in threads:
-                if not th.is_alive():
-                    print ('kill all ')
-                    kill_all = True
+#        for i, th in enumerate(threads):
+#            th.join()
 
-        for i, th in enumerate(threads):
-            print (i, 'join')
-            th.join(timeout=120)
+        while True:
+            self.ioq.monitoring()
+            time.sleep(20)
 
         self.ioq.reset_lock()
 
@@ -727,7 +724,7 @@ class Preprocesser:
     def process(self) -> None:
         tester = [
                 CrossVersion,
-                Minimizer,
+#                Minimizer,
         ]
 
         for test in tester: 
