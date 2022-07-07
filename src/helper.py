@@ -249,14 +249,18 @@ class IOQueue:
             self.monitor.pop((thread_id, br.version, html_file), None)
 
     def monitoring(self):
+        brs = []
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
             if not acquired: return
             cur_time = time.time()
             for cur_test in self.monitor:
                 br, t = self.monitor[cur_test]
-                if cur_time - t > 40:
+                if cur_time - t > 60:
+                    brs.append(br)
                     print (f'Chrome {cur_test[1]} in thread {cur_test[0]} is hanging ...', cur_test[2])
 
+        for br in brs:
+            if br: br.kill_browser()
 
 class FileManager:
     def get_all_files(root, ext=None):

@@ -70,9 +70,8 @@ class Browser:
                 continue
         #TODO
         if self.browser is None: 
-
             return False
-
+        print (f'browser {self.version} starts')
         WIDTH = getenv('WIDTH')
         WIDTH = 800 if not WIDTH else int(WIDTH)
         HEIGHT = getenv('HEIGHT')
@@ -125,7 +124,12 @@ class Browser:
 
     def kill_browser(self):
         if self.browser and self.browser.session_id:
-            self.browser.quit()
+            try:
+                self.browser.close()
+                self.browser.quit()
+            except:
+                pass
+
 
     def get_source(self):
         try: return '<!DOCTYPE html>\n' + self.browser.page_source

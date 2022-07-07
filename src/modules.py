@@ -1,6 +1,7 @@
 import os
 import re
 import time
+from os.path import basename, join, dirname
 from datetime import timedelta
 
 from driver import Browser
@@ -46,11 +47,7 @@ class CrossVersion(Thread):
         return True
 
     def stop_browsers(self) -> None:
-        num_of_flake = 0
-        num_of_flake2 = 0
-        for br in self.__br_list: 
-            num_of_flake += br.flak['BAD HTML']
-            num_of_flake2 += br.flak['BAD HTML DIFF']
+        for br in self.__br_list:
             br.kill_browser()
         self.__br_list.clear()
 
@@ -61,7 +58,7 @@ class CrossVersion(Thread):
         for br in self.__br_list:
             self.helper.record_current_test(thread_id, br, html_file)
             hash_v = br.get_hash_from_html(html_file, self.saveshot)
-            if hash_v is None: 
+            if hash_v is None:
                 return
 
             img_hashes.append(hash_v)
@@ -73,7 +70,7 @@ class CrossVersion(Thread):
         hashes = self.cross_version_test_html(html_file)
         for _ in range(0):
             if not self.is_bug(hashes):
-                return 
+                return
             hashes = self.cross_version_test_html(html_file)
         return hashes
 
@@ -100,13 +97,12 @@ class CrossVersion(Thread):
                 hpr.download_chrome(cur_vers[1])
                 if not self.start_browsers(cur_vers):
                     continue
-            
+
             hashes = self.cross_version_test_html_nth(html_file)
-            if self.is_bug(hashes): 
+            if self.is_bug(hashes):
               hpr.update_postq(vers, html_file, hashes)
 
         self.stop_browsers()
-        #print ('total', time.time() - start)
 
 
 class Oracle(Thread):
@@ -191,7 +187,7 @@ class Bisecter(Thread):
     def get_chrome(self, ver: int) -> None:
         self.helper.download_chrome(ver)
 
-    def get_pixel_from_html(self, html_file): 
+    def get_pixel_from_html(self, html_file):
         return self.ref_br.get_hash_from_html(html_file, self.saveshot)
 
     def run(self) -> None:
@@ -200,12 +196,11 @@ class Bisecter(Thread):
 
         while True:
             vers = hpr.get_vers()
-            if not vers: 
+            if not vers:
                 break
-            #print (vers)
 
             result = hpr.pop_from_queue(False)
-            if not result: 
+            if not result:
                 break
             html_file, hashes = result
             if len(hashes) != 2:
@@ -214,7 +209,7 @@ class Bisecter(Thread):
             hpr.set_version_list(html_file, self.build)
 
             start, end, ref = vers
-            if start >= end: 
+            if start >= end:
                 print (html_file, 'start and end are the same;')
                 continue
 
@@ -310,10 +305,10 @@ class Minimizer(CrossVersion):
     def __initial_test(self, html_file):
 
         self.__html_file = html_file
-        self.__trim_file = os.path.join(os.path.dirname(html_file), 
-                'trim' + os.path.basename(html_file))
-        self.__temp_file = os.path.join(os.path.dirname(html_file), 
-                'temp' + os.path.basename(html_file))
+        self.__trim_file = join(dirname(html_file),
+                'trim' + basename(html_file))
+        self.__temp_file = join(dirname(html_file),
+                'temp' + basename(html_file))
 
         copyfile(html_file, self.__trim_file)
         copyfile(html_file, self.__temp_file)
@@ -331,20 +326,14 @@ class Minimizer(CrossVersion):
         style_line = re.sub('; ', '; \n', style_line)
         style_blocks = style_line.split('\n')
 
-        #print('> Minimizing style idx: {} ...'.format(idx))
-        #print('> Initial style entries: {}'.format(len(style_blocks)))
-
         min_blocks = style_blocks
         min_indices = range(len(style_blocks))
 
-        trim_sizes = [ pow(2,i) for i in range(3,-1,-1) ] # 8, 4, 2, 1
         trim_sizes = [x for x in trim_sizes if x < len(style_blocks)]
         for trim_size in trim_sizes:
-            #print('> Setting trim size: {}'.format(trim_size))
             for offset in range(1, len(style_blocks) - 2, trim_size):
                 if offset not in min_indices:
                     continue
-                #print('> Current style entries: {}'.format(len(min_blocks)))
 
                 trim_indices = range(offset, min(offset + trim_size, len(style_blocks) - 2))
 
@@ -380,7 +369,6 @@ class Minimizer(CrossVersion):
     def __minimize_slines(self, style):
         style_content = style.contents[0]
         style_lines = [ line + '\n' for line in style_content.split('\n') if '{ }' not in line]
-        #print (style_lines)
 
         min_lines = style_lines
         for i in range(len(style_lines)):
@@ -403,7 +391,6 @@ class Minimizer(CrossVersion):
 
                 self.__min_html = [ line + '\n' for line in self.__cat_html.split('\n') ]
             except:
-                #print ('style is ', soup.style)
                 return
         else:
             return True
@@ -423,7 +410,6 @@ class Minimizer(CrossVersion):
             FileManager.write_file(self.__trim_file, text)
             hashes = self.cross_version_test_html_nth(self.__trim_file) 
             if self.is_bug(hashes):
-                #print (f'{i}th element is removed')
                 self.__min_html = text
                 FileManager.write_file(self.__temp_file, self.__min_html)
             else:
@@ -437,7 +423,6 @@ class Minimizer(CrossVersion):
                     FileManager.write_file(self.__trim_file, text)
                     hashes = self.cross_version_test_html_nth(self.__trim_file) 
                     if self.is_bug(hashes):
-                        #print (f'{attr} attr is removed')
                         self.__min_html = text
                         FileManager.write_file(self.__temp_file, self.__min_html)
 
@@ -446,13 +431,10 @@ class Minimizer(CrossVersion):
         in_html_num_lines = len(self.__in_html)
         self.__min_indices = range(in_html_num_lines) 
 
-#        self.__min_html = '\n'.join(self.__min_html)
-
         try_indices = []
         for i, line in enumerate(self.__in_html):
             try_indices.append(i)
 
-        trim_sizes = [ pow(2, i) for i in range(7,-1,-1) ] # 128,64,32,16,8,4,2,1
         trim_sizes = [x for x in trim_sizes if x < in_html_num_lines]
 
         for trim_size in trim_sizes:
@@ -469,7 +451,7 @@ class Minimizer(CrossVersion):
                     if i not in trim_indices and i in self.__min_indices:
                         min_html.append(line + '\n')
                         min_indices.append(i)
-                
+
                 min_html_str = ''.join(min_html)
                 FileManager.write_file(self.__trim_file, min_html_str)
                 hashes = self.cross_version_test_html_nth(self.__trim_file) 
@@ -553,7 +535,6 @@ class R2Z2:
             dirname = class_name
             dir_path = os.path.join(self.out_dir, dirname)
             self.ioq.dump_queue(dir_path)
-            #self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
     def process(self) -> None:
         tester = [
@@ -566,10 +547,6 @@ class R2Z2:
 
         for test in tester: 
             self.test_wrapper(test)
-
-#        dir_path = os.path.join(self.out_dir, 'Result')
-#        self.ioq.dump_queue_with_sort(dir_path)
-#        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
         report = [
                 CrossVersion,
@@ -619,7 +596,6 @@ class Finder(R2Z2):
         start = time.time()
         tester = [
                 CrossVersion,
-        #        Minimizer,
                 Oracle,
                 Bisecter,
         ]
@@ -714,7 +690,6 @@ class Preprocesser:
         if not report:
             self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
         self.ioq.move_to_preqs()
-        #print (elapsed_time)
         if not report:
             dirname = class_name
             dir_path = os.path.join(self.out_dir, dirname)
@@ -724,7 +699,7 @@ class Preprocesser:
     def process(self) -> None:
         tester = [
                 CrossVersion,
-#                Minimizer,
+                Minimizer,
         ]
 
         for test in tester: 
