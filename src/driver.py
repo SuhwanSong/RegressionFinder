@@ -71,7 +71,7 @@ class Browser:
         #TODO
         if self.browser is None: 
             return False
-        print (f'browser {self.version} starts')
+        #print (f'browser {self.version} starts')
         WIDTH = getenv('WIDTH')
         WIDTH = 800 if not WIDTH else int(WIDTH)
         HEIGHT = getenv('HEIGHT')

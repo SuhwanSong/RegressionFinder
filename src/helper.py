@@ -1,31 +1,26 @@
-import csv
 import copy
+import time
 import bisect
 import numpy as np
-from os import walk, getenv
-from os.path import join, dirname, abspath, exists, basename
-from PIL import Image
-from PIL import ImageChops
-from io import BytesIO
-
-import time
 
 from queue import Queue
+from pathlib import Path
 from random import choice
 from threading import Lock
+from typing import Optional
+from shutil import copyfile
 from collections import defaultdict
 
-from pathlib import Path
-from typing import Optional
-from shutil import copyfile 
 from chrome_binary import build_chrome_binary
 from chrome_binary import download_chrome_binary
 from chrome_binary import get_commit_from_position
 
-from domato.grammar import Grammar
-from domato.generator import generate_new_sample 
-
 from contextlib import contextmanager
+
+from PIL import Image
+from io import BytesIO
+from os import walk, getenv
+from os.path import join, dirname, abspath, exists, basename
 
 @contextmanager
 def acquire_timeout(lock, timeout):
@@ -34,8 +29,38 @@ def acquire_timeout(lock, timeout):
     if result:
         lock.release()
 
+MILESTONE = {
+    79: 706915,
+    80: 722274,
+    81: 737173,
+    82: 749737,
+    83: 756066,
+    84: 768962,
+    85: 782793,
+    86: 800218,
+    87: 812852,
+    88: 827102,
+    89: 843830,
+    90: 857950,
+    91: 870763,
+    92: 885287,
+    93: 902210,
+    94: 911515,
+    95: 920003,
+    96: 929512,
+    97: 938553,
+    98: 950365,
+    99: 961656,
+    100: 972766,
+    101: 982481,
+    102: 992738,
+    103:1002911,
+    104:1006827
+}
+
+
 class IOQueue:
-    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]]) -> None:
+    def __init__(self, testcases: list, revision_range: list, oracle_ver: int) -> None:
 
         self.__build_lock = Lock()
         self.__queue_lock = Lock()
@@ -47,20 +72,19 @@ class IOQueue:
         self.num_of_inputs = 0
         self.num_of_outputs = 0
 
-        self.limit = 10000
+        self.limit = 500
 
         self.version_list = {}
-
         self.monitor = defaultdict(float)
 
-        for testcase, vers in input_version_pair.items():
-            self.num_of_inputs += 1
-            self.insert_to_queue(vers, testcase, ())
-            self.start_v = vers[0]
-            self.end_v = vers[1]
+        self.revlist = revision_range
 
+        vers = (self.revlist[0], self.revlist[-1], oracle_ver)
+        for testcase in testcases:
+            self.insert_to_queue(vers, testcase, ())
 
         self.start_time = time.time()
+
 
     def reset_lock(self):
         if self.__queue_lock.locked():
@@ -100,6 +124,7 @@ class IOQueue:
             if not acquired: return 
             value = [html_file, hashes]
             self.__preqs[vers].put(value)
+            self.num_of_inputs += 1
 
             if not self.__vers: 
                 self.__vers = self.__select_vers()
@@ -122,8 +147,8 @@ class IOQueue:
                 self.__vers = self.__select_vers()
             self.num_of_tests += 1
             if self.num_of_tests % 20 == 0:
-                tt = (time.time() - self.start_time) / 60
-                ot = self.num_of_tests / tt
+                tt = round((time.time() - self.start_time) / 60, 3)
+                ot = round(self.num_of_tests / tt, 3)
                 print (f'test: {self.num_of_tests}, outputs: {self.num_of_outputs}, time: {tt}, test / time: {ot}')
             return value
 
@@ -209,10 +234,10 @@ class IOQueue:
             if not acquired: return 
             if html_file not in self.version_list:
                 if not build:
-                    verlist = FileManager.get_bisect_csv(self.start_v, self.end_v)
+                    verlist = copy.deepcopy(self.revision_range)
                 else:
-                    verlist = list(range(self.start_v, self.end_v + 1))
-                self.version_list[html_file] = copy.deepcopy(verlist)
+                    verlist = list(range(self.revision_range[0], self.revision_range[-1] + 1))
+                self.version_list[html_file] = verlist
 
     def convert_to_ver(self, html_file, index: int) -> int:
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
@@ -255,7 +280,7 @@ class IOQueue:
             cur_time = time.time()
             for cur_test in self.monitor:
                 br, t = self.monitor[cur_test]
-                if cur_time - t > 60:
+                if cur_time - t > 30:
                     brs.append(br)
                     print (f'Chrome {cur_test[1]} in thread {cur_test[0]} is hanging ...', cur_test[2])
 
@@ -272,22 +297,6 @@ class FileManager:
                 paths.append((join(path, name)))
         return paths
 
-    def get_bisect_csv(s=-1, e=-1):
-        csvfile = join(
-                dirname(dirname(abspath(__file__))),
-                'data', 
-                'bisect-builds-cache.csv')
-        tmp = []
-        with open(csvfile, 'r') as fp:
-            line = fp.readline()
-            vers = line.split(', ')
-            for ver in vers:
-                v = int(ver)
-                if s == -1 or s <= v <= e:
-                    tmp.append(v)
-        tmp.sort()
-        return tmp
-
     def get_parent_dir(file):
         return dirname(dirname(abspath(file)))
 
@@ -298,6 +307,33 @@ class FileManager:
     def read_file(name):
         with open(name, 'r') as fp:
             return fp.read()
+
+class VersionManager:
+    def __init__(self):
+        csvfile = join(
+                dirname(dirname(abspath(__file__))),
+                'data', 
+                'bisect-builds-cache.csv')
+        self.revlist = []
+        with open(csvfile, 'r') as fp:
+            line = fp.readline()
+            vers = line.split(', ')
+            for ver in vers:
+                v = int(ver)
+                self.revlist.append(v)
+        self.revlist.sort()
+
+    def get_revision(self, version):
+        return self.revlist[bisect.bisect_left(self.revlist, MILESTONE[version - 1]) - 1]
+
+    def get_rev_range(self, a, b):
+        tmp = []
+        rev_a = self.get_revision(a)
+        rev_b = self.get_revision(b)
+        for rev in self.revlist:
+            if rev_a <= rev <= rev_b:
+                tmp.append(rev)
+        return tmp
 
 import hashlib
 class ImageDiff:
@@ -317,33 +353,3 @@ class ImageDiff:
         im = Image.open(stream, 'r')
         im.save(name)
         im.close()
-
-
-MILESTONE = {
-    79: 706915,
-    80: 722274,
-    81: 737173,
-    82: 749737,
-    83: 756066,
-    84: 768962,
-    85: 782793,
-    86: 800218,
-    87: 812852,
-    88: 827102,
-    89: 843830,
-    90: 857950,
-    91: 870763,
-    92: 885287,
-    93: 902210,
-    94: 911515,
-    95: 920003,
-    96: 929512,
-    97: 938553,
-    98: 950365,
-    99: 961656,
-    100: 972766,
-    101: 982481,
-    102: 992738,
-    103:1002911,
-    104:1006827
-}

@@ -1,8 +1,10 @@
 import os
 import re
 import time
-from os.path import basename, join, dirname
+
 from datetime import timedelta
+from pyvirtualdisplay import Display
+from os.path import basename, join, dirname
 
 from driver import Browser
 from typing import Optional
@@ -10,6 +12,7 @@ from typing import Optional
 from helper import IOQueue
 from helper import ImageDiff
 from helper import FileManager
+from helper import VersionManager
 
 from threading import Thread
 from threading import current_thread
@@ -497,13 +500,26 @@ class Minimizer(CrossVersion):
         self.stop_browsers()
 
 
-class R2Z2:
-    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int) -> None:
-        self.ioq = IOQueue(input_version_pair)
+class Preprocesser:
+    def __init__(self, input_dir: str, output_dir: str, num_of_threads: int,
+                 base_version: int, target_version: int) -> None:
+
+        self.in_dir = input_dir
         self.out_dir = output_dir
         self.num_of_threads = num_of_threads
+        self.base_ver = base_version
+        self.target_ver = target_version
 
         self.experiment_result = {}
+        self.tester = [
+                CrossVersion,
+                Minimizer,
+        ]
+        self.report = [
+        ]
+
+        self.oracle_br = {'type': None, 'ver': None}
+
 
     def test_wrapper(self, test_class: object, report: bool = False) -> None:
         start = time.time()
@@ -517,55 +533,111 @@ class R2Z2:
 
         for th in threads:
             th.start()
-        for th in threads:
-            th.join()
+
+        all_terminated = False
+        while not all_terminated:
+            self.ioq.monitoring()
+            time.sleep(10)
+            all_terminated = not any([th.is_alive() for th in threads])
 
         self.ioq.reset_lock()
-
-        end = time.time()
-        elapsed = end - start
+        elapsed = time.time() - start
         elapsed_time = str(timedelta(seconds=elapsed))
-        print (f'{class_name} stage ends...')
+        print (f'{class_name} stage ends...', elapsed_time)
 
         if not report:
             self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
         self.ioq.move_to_preqs()
-        print (elapsed_time)
         if not report:
             dirname = class_name
             dir_path = os.path.join(self.out_dir, dirname)
             self.ioq.dump_queue(dir_path)
 
-    def process(self) -> None:
-        tester = [
-                CrossVersion,
-                Minimizer,
-                Oracle,
-                Bisecter,
-                BisecterBuild
-        ]
 
-        for test in tester: 
+    def process(self) -> None:
+        start = time.time()
+
+        vm = VersionManager()
+        testcases = FileManager.get_all_files(self.in_dir, '.html')
+        rev_range = vm.get_rev_range(self.base_ver, self.target_ver)
+
+        brtype = self.oracle_br['type']
+        brver = self.oracle_br['ver']
+
+        if not brtype or brtype == 'firefox':
+            oracle_ver = brver
+        elif brtype == 'chrome':
+            oracle_ver = vm.get_revision(brver)
+        else:
+            raise ValueError('something wrong at self.oracle_br')
+
+        num_of_tests = len(testcases)
+        rev_a = rev_range[0]
+        rev_b = rev_range[-1]
+
+        print (f'# of tests: {num_of_tests}, rev_a: {rev_a}, rev_b: {rev_b}, rev_c: {oracle_ver}')
+
+        self.ioq = IOQueue(testcases, rev_range, oracle_ver)
+
+        disp = Display(size=(1200, 800))
+        disp.start()
+
+        for test in self.tester: 
             self.test_wrapper(test)
 
-        report = [
+        elapsed = time.time() - start
+        self.experiment_result['TOTAL TIME'] = timedelta(seconds=elapsed)
+
+        if self.report:
+            self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
+            for test in self.report: 
+                self.test_wrapper(test, True)
+
+        disp.stop()
+        print (self.experiment_result)
+
+
+class ChromeRegression(Preprocesser):
+    def __init__(self, input_dir: str, output_dir: str, num_of_threads: int,
+                 base_version: int, target_version: int, oracle_version: int) -> None:
+        super().__init__(input_dir, output_dir, num_of_threads, base_version, target_version)
+
+        self.tester = [
                 CrossVersion,
+                ChromeOracle,
+                Bisecter,
+
+        ]
+        self.report = [
+                CrossVersion,
+                ChromeOracle
         ]
 
-        for test in report: 
-            self.test_wrapper(test, True)
+        self.oracle_br = {'type': 'chrome', 'ver': oracle_version}
 
 
+class FirefoxRegression(Preprocesser):
+    def __init__(self, input_dir: str, output_dir: str, num_of_threads: int,
+                 base_version: int, target_version: int, oracle_version: int) -> None:
+        super().__init__(input_dir, output_dir, num_of_threads, base_version, target_version)
 
-class Finder(R2Z2):
-    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int, answer_version: int) -> None:
-        super().__init__(input_version_pair, output_dir, num_of_threads)
-        self.__answer_version = answer_version
+        self.tester = [
+                CrossVersion,
+                Oracle,
+                Bisecter,
+        ]
+
+        self.report = [
+                CrossVersion,
+                Oracle,
+        ]
+
+        self.oracle_br = {'type': 'firefox', 'ver': oracle_version}
 
 
-    def answer(self) -> None:
+    def answer(self, answer_version) -> None:
         print ('answer step')
-        ref_br = Browser('chrome', self.__answer_version)
+        ref_br = Browser('chrome', vm.get_revision(answer_version))
         ref_br.setup_browser()
 
         hpr = self.ioq
@@ -591,116 +663,3 @@ class Finder(R2Z2):
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
-
-    def process(self) -> None:
-        start = time.time()
-        tester = [
-                CrossVersion,
-                Oracle,
-                Bisecter,
-        ]
-
-        for test in tester: 
-            self.test_wrapper(test)
-
-        self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
-        end = time.time()
-        elapsed = end - start
-        elapsed_time = str(timedelta(seconds=elapsed))
-        self.experiment_result['TOTAL'] = [self.ioq.num_of_outputs, elapsed_time]
-
-        report = [
-                CrossVersion,
-                Oracle,
-        ]
-
-        for test in report: 
-            self.test_wrapper(test, True)
-
-        self.answer()
-        print (self.experiment_result)
-
-class ChromeRegression(R2Z2):
-    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int) -> None:
-        super().__init__(input_version_pair, output_dir, num_of_threads)
-
-
-    def process(self) -> None:
-        start = time.time()
-        tester = [
-                CrossVersion,
-        #        Minimizer,
-                ChromeOracle,
-                Bisecter,
-        ]
-
-        for test in tester: 
-            self.test_wrapper(test)
-
-        self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
-        end = time.time()
-        elapsed = end - start
-        elapsed_time = str(timedelta(seconds=elapsed))
-        self.experiment_result['TOTAL'] = [self.ioq.num_of_outputs, elapsed_time]
-        report = [
-                CrossVersion,
-                ChromeOracle
-        ]
-
-        for test in report: 
-            self.test_wrapper(test, True)
-        print (self.experiment_result)
-
-
-class Preprocesser:
-    def __init__(self, input_version_pair: dict[str, tuple[int, int, int]], output_dir: str, num_of_threads: int) -> None:
-        self.ioq = IOQueue(input_version_pair)
-        self.out_dir = output_dir
-        self.num_of_threads = num_of_threads
-
-        self.experiment_result = {}
-
-    def test_wrapper(self, test_class: object, report: bool = False) -> None:
-        start = time.time()
-        threads = []
-        for i in range(self.num_of_threads):
-            threads.append(test_class(self.ioq))
-            threads[-1].saveshot = report
-
-        class_name = type(threads[-1]).__name__
-        print (f'{class_name} stage starts...')
-
-        for th in threads:
-            th.start()
-
-#        for i, th in enumerate(threads):
-#            th.join()
-
-        while True:
-            self.ioq.monitoring()
-            time.sleep(20)
-
-        self.ioq.reset_lock()
-
-        end = time.time()
-        elapsed = end - start
-        elapsed_time = str(timedelta(seconds=elapsed))
-        print (f'{class_name} stage ends...')
-
-        if not report:
-            self.experiment_result[class_name] = [self.ioq.num_of_outputs, elapsed_time]
-        self.ioq.move_to_preqs()
-        if not report:
-            dirname = class_name
-            dir_path = os.path.join(self.out_dir, dirname)
-            self.ioq.dump_queue(dir_path)
-
-
-    def process(self) -> None:
-        tester = [
-                CrossVersion,
-                Minimizer,
-        ]
-
-        for test in tester: 
-            self.test_wrapper(test)
