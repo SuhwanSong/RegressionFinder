@@ -159,8 +159,7 @@ class Browser:
         self.__num_of_run += 1
         return True
 
-    def _get_hash_from_html(self, html_file, save_shot: bool = False):
-
+    def get_hash_from_html(self, html_file, save_shot: bool = False):
         ret = self.run_html(html_file)
         if not ret: return 
 
@@ -168,8 +167,3 @@ class Browser:
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
         hash_v = self.__screenshot_and_hash(screenshot_name)
         return hash_v
-
-    def get_hash_from_html(self, html_file, save_shot: bool = False):
-        hash_v = self._get_hash_from_html(html_file, save_shot)
-        return hash_v
-

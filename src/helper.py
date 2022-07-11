@@ -234,9 +234,9 @@ class IOQueue:
             if not acquired: return 
             if html_file not in self.version_list:
                 if not build:
-                    verlist = copy.deepcopy(self.revision_range)
+                    verlist = copy.deepcopy(self.revlist)
                 else:
-                    verlist = list(range(self.revision_range[0], self.revision_range[-1] + 1))
+                    verlist = list(range(self.revlist[0], self.revlist[-1] + 1))
                 self.version_list[html_file] = verlist
 
     def convert_to_ver(self, html_file, index: int) -> int:

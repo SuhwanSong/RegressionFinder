@@ -18,13 +18,9 @@ def main():
     args = parser.parse_args()
 
     seed(0)
-    Preprocesser(args.input, args.output, args.job,
-                 args.base, args.target).process()
-
-    new_input_dir = join(args.output, 'Minimizer')
-    new_output_dir = join(dirname(args.output), basename(args.output) + '_r2z2')
-    FirefoxRegression(new_input_dir, new_output_dir, args.job,
+    FirefoxRegression(args.input, args.output, args.job,
                       args.base, args.target, args.firefox).process()
+
 
 
 if __name__ == "__main__":

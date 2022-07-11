@@ -71,10 +71,10 @@ class CrossVersion(Thread):
 
     def cross_version_test_html_nth(self, html_file: str) -> Optional[list]:
         hashes = self.cross_version_test_html(html_file)
+        if hashes is None: return 
         for _ in range(0):
-            if not self.is_bug(hashes):
-                return
-            hashes = self.cross_version_test_html(html_file)
+            new_hashes = self.cross_version_test_html(html_file)
+            if hashes != new_hashes: return 
         return hashes
 
     def is_bug(self, hashes):
@@ -520,6 +520,9 @@ class Preprocesser:
 
         self.oracle_br = {'type': None, 'ver': None}
 
+    def skip_minimizer(self):
+        self.tester.remove(Minimizer)
+
 
     def test_wrapper(self, test_class: object, report: bool = False) -> None:
         start = time.time()
@@ -557,9 +560,9 @@ class Preprocesser:
     def process(self) -> None:
         start = time.time()
 
-        vm = VersionManager()
+        self.vm = VersionManager()
         testcases = FileManager.get_all_files(self.in_dir, '.html')
-        rev_range = vm.get_rev_range(self.base_ver, self.target_ver)
+        rev_range = self.vm.get_rev_range(self.base_ver, self.target_ver)
 
         brtype = self.oracle_br['type']
         brver = self.oracle_br['ver']
@@ -602,17 +605,16 @@ class ChromeRegression(Preprocesser):
                  base_version: int, target_version: int, oracle_version: int) -> None:
         super().__init__(input_dir, output_dir, num_of_threads, base_version, target_version)
 
-        self.tester = [
-                CrossVersion,
+        self.tester.extend([
                 ChromeOracle,
                 Bisecter,
 
-        ]
-        self.report = [
+        ])
+
+        self.report.extend([
                 CrossVersion,
                 ChromeOracle
-        ]
-
+        ])
         self.oracle_br = {'type': 'chrome', 'ver': oracle_version}
 
 
@@ -621,23 +623,22 @@ class FirefoxRegression(Preprocesser):
                  base_version: int, target_version: int, oracle_version: int) -> None:
         super().__init__(input_dir, output_dir, num_of_threads, base_version, target_version)
 
-        self.tester = [
-                CrossVersion,
+        self.tester.extend([
                 Oracle,
                 Bisecter,
-        ]
+        ])
 
-        self.report = [
+        self.report.extend([
                 CrossVersion,
                 Oracle,
-        ]
+        ])
 
         self.oracle_br = {'type': 'firefox', 'ver': oracle_version}
 
 
     def answer(self, answer_version) -> None:
         print ('answer step')
-        ref_br = Browser('chrome', vm.get_revision(answer_version))
+        ref_br = Browser('chrome', self.vm.get_revision(answer_version))
         ref_br.setup_browser()
 
         hpr = self.ioq
