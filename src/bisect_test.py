@@ -38,229 +38,155 @@ class fake:
     png_c = 'fake_png_c'
     crash = None
 
+# Bisects from start to end using the results in the bisect_results map. Each
+# value in bisect_results should be checked exactly once, to ensure that we do
+# not do too many or too few tests.
+def test_bisect_(start, end, bisect_results) -> int:
+    def getPngByRevisionForTesting(rev):
+        if rev in bisect_results:
+            retval = bisect_results[rev]
+            # Delete the result because each result should only be tested once.
+            del bisect_results[rev]
+            return retval
+        raise RuntimeError('Bisected to an unexpected revision')
+
+    empty = {}
+    ioq = IOQueue(empty, [start, end], 0)
+    start_value = getPngByRevisionForTesting(start)
+    end_value = getPngByRevisionForTesting(end)
+    ioq.insert_to_queue((start, end, None), 'test', (start_value, end_value))
+
+    bi = BisectTester(ioq)
+    bi.func = getPngByRevisionForTesting
+    bi.start()
+    bi.join()
+    ioq.move_to_preqs()
+    vers = ioq.get_vers()
+    if len(bisect_results) != 0:
+        raise RuntimeError('Did not check all of the expected bisect results')
+    if not vers:
+        return None
+    return vers[1]
+
 class TestBisecter(unittest.TestCase):
+    def test_noop(self):
+        bisect_results = {
+          5: fake.png_a,
+          6: fake.png_b,
+        }
+        self.assertEqual(6, test_bisect_(5, 6, bisect_results))
 
-    def test1(self):
-        print ('test 1 starts')
-        empty = {}
-        ioq = IOQueue(empty)
-        ioq.start_v = 5
-        ioq.end_v = 9
-        ioq.insert_to_queue((5, 9, None), 'test1', (fake.png_a, fake.png_b))
+    def test3_1(self):
+        bisect_results = {
+          5: fake.png_a,
+          6: fake.png_a,
+          7: fake.png_b,
+        }
+        self.assertEqual(7, test_bisect_(5, 7, bisect_results))
 
-        def getPngByRevisionForTesting(rev):
-            if rev == 5: return fake.png_a
-            elif rev == 6: return fake.png_b
-            elif rev == 7: return fake.png_b
-            elif rev == 9: return fake.png_b
-            else:
-                with self.assertRaises(RuntimeError, msg='your exception message'):
-                    assert_()
-        
-        bi = BisectTester(ioq)
-        bi.func = getPngByRevisionForTesting
-        bi.start()
-        bi.join()
-        ioq.move_to_preqs()
-        vers = ioq.get_vers()
-        ret = ioq.pop_from_queue() 
-        print ('vers:', vers) 
-        print (vers[1], 'should be 6')
-        self.assertEqual(6, vers[1])
+    def test3_2(self):
+        bisect_results = {
+          5: fake.png_a,
+          6: fake.png_b,
+          7: fake.png_b,
+        }
+        self.assertEqual(6, test_bisect_(5, 7, bisect_results))
 
-    def test2(self):
-        print ('\ntest 2 starts')
-        empty = {}
-        ioq = IOQueue(empty)
-        ioq.start_v = 5
-        ioq.end_v = 9
-        ioq.insert_to_queue((5, 9, None), 'test2', (fake.png_a, fake.png_b))
+    def test4_1(self):
+        bisect_results = {
+          5: fake.png_a,
+          6: fake.png_b,
+          7: fake.png_b,
+          9: fake.png_b,
+        }
+        self.assertEqual(6, test_bisect_(5, 9, bisect_results))
 
-        def getPngByRevisionForTesting(rev):
-            if rev == 5: return fake.png_a
-            elif rev == 6: return fake.crash
-            elif rev == 7: return fake.png_b
-            elif rev == 9: return fake.png_b
-            else:
-                with self.assertRaises(RuntimeError, msg='your exception message'):
-                    assert_()
-        
-        bi = BisectTester(ioq)
-        bi.func = getPngByRevisionForTesting
-        bi.start()
-        bi.join()
-        ioq.move_to_preqs()
-        vers = ioq.get_vers()
-        ret = ioq.pop_from_queue() 
-        print ('vers:', vers) 
-        print (vers[1], 'should be 7')
-        self.assertEqual(7, vers[1])
+    def test4_2(self):
+        bisect_results = {
+          5: fake.png_a,
+          6: fake.png_a,
+          7: fake.png_b,
+          9: fake.png_b,
+        }
+        self.assertEqual(7, test_bisect_(5, 9, bisect_results))
 
-    def test3(self):
-        print ('\ntest 3 starts')
-        empty = {}
-        ioq = IOQueue(empty)
-        ioq.start_v = 5
-        ioq.end_v = 9
-        ioq.insert_to_queue((5, 9, None), 'test3', (fake.png_a, fake.png_b))
+    def test4_3(self):
+        bisect_results = {
+          5: fake.png_a,
+          7: fake.png_a,
+          8: fake.png_b,
+          9: fake.png_b,
+        }
+        self.assertEqual(8, test_bisect_(5, 9, bisect_results))
 
-        def getPngByRevisionForTesting(rev):
-            if rev == 5: return fake.png_a
-            elif rev == 6: return fake.png_c
-            elif rev == 7: return fake.png_b
-            elif rev == 9: return fake.png_b
-            else:
-                with self.assertRaises(RuntimeError, msg='your exception message'):
-                    assert_()
-        
-        bi = BisectTester(ioq)
-        bi.func = getPngByRevisionForTesting
-        bi.start()
-        bi.join()
-        ioq.move_to_preqs()
-        vers = ioq.get_vers()
-        ret = ioq.pop_from_queue() 
-        print ('vers:', vers) 
-        print (vers[1], 'should be 6')
-        self.assertEqual(6, vers[1])
+    def test4_4(self):
+        bisect_results = {
+          5: fake.png_a,
+          7: fake.png_a,
+          8: fake.png_a,
+          9: fake.png_b,
+        }
+        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
 
+    # If we encounter a crash, bail. This could be improved by ignoring
+    # this revision and continuing the bisect, but this issue is fairly
+    # rare.
+    def test_mid_crash(self):
+        bisect_results = {
+          5: fake.png_a,
+          7: fake.crash,
+          9: fake.png_b,
+        }
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
-    def test4(self):
-        print ('\ntest 4 starts')
-        empty = {}
-        ioq = IOQueue(empty)
-        ioq.start_v = 5
-        ioq.end_v = 6
-        ioq.insert_to_queue((5, 6, None), 'test4', (fake.png_a, fake.png_b))
+    # See comment above |test_mid_crash|.
+    def test_left_crash(self):
+        bisect_results = {
+          5: fake.png_a,
+          6: fake.crash,
+          7: fake.png_b,
+          9: fake.png_b,
+        }
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
-        def getPngByRevisionForTesting(rev):
-            if rev == 5: return fake.png_a
-            elif rev == 6: return fake.png_b
-            else:
-                with self.assertRaises(RuntimeError, msg='your exception message'):
-                    assert_()
-        
-        bi = BisectTester(ioq)
-        bi.func = getPngByRevisionForTesting
-        bi.start()
-        bi.join()
-        ioq.move_to_preqs()
-        vers = ioq.get_vers()
-        ret = ioq.pop_from_queue() 
-        print ('vers:', vers) 
-        print (vers[1], 'should be 6')
-        self.assertEqual(6, vers[1])
-
-    def test5(self):
-        print ('\ntest 5 starts')
-        empty = {}
-        ioq = IOQueue(empty)
-        ioq.start_v = 5
-        ioq.end_v = 7
-        ioq.insert_to_queue((5, 7, None), 'test5', (fake.png_a, fake.png_b))
-
-        def getPngByRevisionForTesting(rev):
-            if rev == 5: return fake.png_a
-            elif rev == 6: return fake.png_a
-            elif rev == 7: return fake.png_b
-            else:
-                with self.assertRaises(RuntimeError, msg='your exception message'):
-                    assert_()
-        
-        bi = BisectTester(ioq)
-        bi.func = getPngByRevisionForTesting
-        bi.start()
-        bi.join()
-        ioq.move_to_preqs()
-        vers = ioq.get_vers()
-        ret = ioq.pop_from_queue() 
-        print ('vers:', vers) 
-        print (vers[1], 'should be 7')
-        self.assertEqual(7, vers[1])
-
-    def test6(self):
-        print ('\ntest 6 starts')
-        empty = {}
-        ioq = IOQueue(empty)
-        ioq.start_v = 5
-        ioq.end_v = 8
-        ioq.insert_to_queue((5, 8, None), 'test6', (fake.png_a, fake.png_b))
-
-        def getPngByRevisionForTesting(rev):
-            if rev == 5: return fake.png_a
-            elif rev == 6: return fake.crash
-            elif rev == 7: return fake.crash
-            elif rev == 8: return fake.png_b
-            else:
-                with self.assertRaises(RuntimeError, msg='your exception message'):
-                    assert_()
-        
-        bi = BisectTester(ioq)
-        bi.func = getPngByRevisionForTesting
-        bi.start()
-        bi.join()
-        ioq.move_to_preqs()
-        vers = ioq.get_vers()
-        ret = ioq.pop_from_queue() 
-        print ('vers:', vers) 
-        print (vers[1], 'should be 8')
-        self.assertEqual(8, vers[1])
+    # See comment above |test_mid_crash|.
+    def test_right_crash(self):
+        bisect_results = {
+          5: fake.png_a,
+          7: fake.png_a,
+          8: fake.crash,
+          9: fake.png_b,
+        }
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
 
-    def test7(self):
-        print ('\ntest 7 starts')
-        empty = {}
-        ioq = IOQueue(empty)
-        ioq.start_v = 5
-        ioq.end_v = 9
-        ioq.insert_to_queue((5, 9, None), 'test7', (fake.png_a, fake.png_b))
+    # If we encounter a result not equal to the start or end, bail. This
+    # could be improved by ignoring this revision and continuing the
+    # bisect, but this issue is fairly rare.
+    def test_mid_c(self):
+        bisect_results = {
+          5: fake.png_a,
+          7: fake.png_c,
+          9: fake.png_b,
+        }
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
-        def getPngByRevisionForTesting(rev):
-            if rev == 5: return fake.png_a
-            elif rev == 6: return fake.crash
-            elif rev == 7: return fake.crash
-            elif rev == 8: return fake.crash
-            elif rev == 9: return fake.png_b
-            else:
-                with self.assertRaises(RuntimeError, msg='your exception message'):
-                    assert_()
-        
-        bi = BisectTester(ioq)
-        bi.func = getPngByRevisionForTesting
-        bi.start()
-        bi.join()
-        ioq.move_to_preqs()
-        vers = ioq.get_vers()
-        ret = ioq.pop_from_queue() 
-        print ('vers:', vers) 
-        print (vers[1], 'should be 9')
-        self.assertEqual(9, vers[1])
+    # See comment above |test_mid_c|.
+    def test_left_c(self):
+        bisect_results = {
+          5: fake.png_a,
+          6: fake.png_c,
+          7: fake.png_b,
+          9: fake.png_b,
+        }
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
-    def test8(self):
-        print ('\ntest 8 starts')
-        empty = {}
-        ioq = IOQueue(empty)
-        ioq.start_v = 5
-        ioq.end_v = 9
-        ioq.insert_to_queue((5, 9, None), 'test8', (fake.png_a, fake.png_b))
-
-        def getPngByRevisionForTesting(rev):
-            if rev == 5: return fake.png_a
-            if rev == 6: return fake.crash
-            elif rev == 7: return fake.png_c
-            elif rev == 8: return fake.png_b
-            elif rev == 9: return fake.png_b
-            else:
-                with self.assertRaises(RuntimeError, msg='your exception message'):
-                    assert_()
-        
-        bi = BisectTester(ioq)
-        bi.func = getPngByRevisionForTesting
-        bi.start()
-        bi.join()
-        ioq.move_to_preqs()
-        vers = ioq.get_vers()
-        ret = ioq.pop_from_queue() 
-        print ('vers:', vers) 
-        print (vers[1], 'should be 7')
-        self.assertEqual(7, vers[1])
+    # See comment above |test_mid_c|.
+    def test_right_c(self):
+        bisect_results = {
+          5: fake.png_a,
+          7: fake.png_a,
+          8: fake.png_c,
+          9: fake.png_b,
+        }
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
