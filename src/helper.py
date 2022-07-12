@@ -1,5 +1,6 @@
 import copy
 import time
+import signal
 import bisect
 import numpy as np
 
@@ -19,7 +20,7 @@ from contextlib import contextmanager
 
 from PIL import Image
 from io import BytesIO
-from os import walk, getenv
+from os import walk, kill, getenv
 from os.path import join, dirname, abspath, exists, basename
 
 @contextmanager
@@ -72,7 +73,8 @@ class IOQueue:
         self.num_of_inputs = 0
         self.num_of_outputs = 0
 
-        self.limit = 500
+        limit = getenv('LIMIT')
+        self.limit = 1000 if not limit else int(limit)
 
         self.version_list = {}
         self.monitor = defaultdict(float)
@@ -146,10 +148,6 @@ class IOQueue:
                 self.__preqs.pop(vers)
                 self.__vers = self.__select_vers()
             self.num_of_tests += 1
-            if self.num_of_tests % 20 == 0:
-                tt = round((time.time() - self.start_time) / 60, 3)
-                ot = round(self.num_of_tests / tt, 3)
-                print (f'test: {self.num_of_tests}, outputs: {self.num_of_outputs}, time: {tt}, test / time: {ot}')
             return value
 
     def get_vers(self) -> Optional[tuple[int, int, int]]:
@@ -163,6 +161,10 @@ class IOQueue:
             if not acquired: return 
             self.__postqs[vers].put((html_file, hashes))
             self.num_of_outputs += 1
+            if self.num_of_outputs % 20 == 0:
+                tt = round((time.time() - self.start_time) / 60, 3)
+                ot = round(self.num_of_tests / tt, 3)
+                print (f'test: {self.num_of_tests}, outputs: {self.num_of_outputs}, time: {tt}, test / time: {ot}')
 
     def move_to_preqs(self):
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
@@ -196,23 +198,29 @@ class IOQueue:
         header = ['base', 'target', 'ref', 'file']
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
             if not acquired: return 
+            bug_commits = set()
+            all_commits = set(os.listdir(path))
             with open(path, 'w') as fp:
                 c = csv.writer(fp)
                 c.writerow(header)
-                keys = self.__preqs.keys()
+                keys = sorted(list(self.__preqs.keys()))
                 for key in keys:
+                    bug_commits.add(key[1])
                     q = self.__preqs[key]
-                    for value in list(q.queue):
+                    for value in sorted(list(q.queue)):
                         html_file, hashes = value
                         base, target, ref = key
                         c.writerow([str(base), str(target), str(ref), html_file])
-
+                total = len(all_commits)
+                tp = len(bug_commits)
+                fp = total - tp
+                fp.write(f'TOTAL: {total}, TP: {tp}, FP: {fp}')
 
     def dump_queue_with_sort(self, dir_path):
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
             if not acquired: return 
             Path(dir_path).mkdir(parents=True, exist_ok=True)
-            keys = self.__preqs.keys()
+            keys = sorted(list(self.__preqs.keys()))
             for vers in keys:
                 q = self.__preqs[vers]
                 length = q.qsize()
@@ -285,7 +293,7 @@ class IOQueue:
                     print (f'Chrome {cur_test[1]} in thread {cur_test[0]} is hanging ...', cur_test[2])
 
         for br in brs:
-            if br: br.kill_browser()
+            br.kill_browser()
 
 class FileManager:
     def get_all_files(root, ext=None):

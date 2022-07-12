@@ -69,10 +69,13 @@ class CrossVersion(Thread):
 
         return img_hashes
 
-    def cross_version_test_html_nth(self, html_file: str) -> Optional[list]:
+    def cross_version_test_html_nth(self, html_file: str, nth: int = 0) -> Optional[list]:
         hashes = self.cross_version_test_html(html_file)
-        if hashes is None: return 
-        for _ in range(0):
+        # if not bug, just return hashes
+        if hashes is None or not self.is_bug(hashes): return hashes
+
+        # if bug, do more
+        for _ in range(nth):
             new_hashes = self.cross_version_test_html(html_file)
             if hashes != new_hashes: return 
         return hashes
@@ -101,7 +104,7 @@ class CrossVersion(Thread):
                 if not self.start_browsers(cur_vers):
                     continue
 
-            hashes = self.cross_version_test_html_nth(html_file)
+            hashes = self.cross_version_test_html_nth(html_file, 3)
             if self.is_bug(hashes):
               hpr.update_postq(vers, html_file, hashes)
 
@@ -317,7 +320,7 @@ class Minimizer(CrossVersion):
         copyfile(html_file, self.__temp_file)
 
         self.__min_html = FileManager.read_file(html_file)
-        hashes = self.cross_version_test_html_nth(html_file) 
+        hashes = self.cross_version_test_html_nth(html_file, 1) 
         return self.is_bug(hashes)
 
 
@@ -360,7 +363,7 @@ class Minimizer(CrossVersion):
 
                 FileManager.write_file(self.__trim_file, tmp_html)
 
-                hashes = self.cross_version_test_html_nth(self.__trim_file)
+                hashes = self.cross_version_test_html_nth(self.__trim_file, 1)
                 if self.is_bug(hashes):
                     min_blocks = tmp_blocks
                     min_indices = tmp_indices
@@ -411,7 +414,8 @@ class Minimizer(CrossVersion):
             text = br.get_source()
             if not text: continue
             FileManager.write_file(self.__trim_file, text)
-            hashes = self.cross_version_test_html_nth(self.__trim_file) 
+            br.clean_html()
+            hashes = self.cross_version_test_html_nth(self.__trim_file, 1) 
             if self.is_bug(hashes):
                 self.__min_html = text
                 FileManager.write_file(self.__temp_file, self.__min_html)
@@ -424,7 +428,8 @@ class Minimizer(CrossVersion):
                     text = br.get_source()
                     if not text: continue
                     FileManager.write_file(self.__trim_file, text)
-                    hashes = self.cross_version_test_html_nth(self.__trim_file) 
+                    br.clean_html()
+                    hashes = self.cross_version_test_html_nth(self.__trim_file, 1) 
                     if self.is_bug(hashes):
                         self.__min_html = text
                         FileManager.write_file(self.__temp_file, self.__min_html)
@@ -457,7 +462,8 @@ class Minimizer(CrossVersion):
 
                 min_html_str = ''.join(min_html)
                 FileManager.write_file(self.__trim_file, min_html_str)
-                hashes = self.cross_version_test_html_nth(self.__trim_file) 
+                br.clean_html()
+                hashes = self.cross_version_test_html_nth(self.__trim_file, 1) 
                 if self.is_bug(hashes):
                     self.__min_html = min_html_str
                     self.__min_indices = min_indices
@@ -489,7 +495,7 @@ class Minimizer(CrossVersion):
             if self.__initial_test(html_file):
                 self.__minimizing()
   
-                hashes = self.cross_version_test_html_nth(self.__temp_file)
+                hashes = self.cross_version_test_html_nth(self.__temp_file, 1)
                 if self.is_bug(hashes):
                     min_html_file = os.path.splitext(html_file)[0] + '-min.html'
                     copyfile(self.__temp_file, min_html_file)
@@ -664,3 +670,4 @@ class FirefoxRegression(Preprocesser):
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
+        

@@ -357,6 +357,9 @@ def generate_new_sample(template, htmlgrammar, cssgrammar, jsgrammar):
     )
     generate_html_elements(htmlctx, _N_ADDITIONAL_HTMLVARS)
 
+
+    css = css.replace('-webkit-', '')
+    html = html.replace('-webkit-', '')
     result = result.replace('<cssfuzzer>', css)
     result = result.replace('<htmlfuzzer>', html)
 

@@ -45,6 +45,7 @@ class Browser:
         self.__num_of_run = 0
         self.__browser_type = browser_type
 
+        self.browser = None
         self.version = commit_version
 
         self.time = defaultdict(float)
@@ -54,6 +55,7 @@ class Browser:
     def setup_browser(self):
         self.__num_of_run = 0
         start = time.time()
+        self.browser = None
         for _ in range(5):
             try:
                 if self.__browser_type == 'chrome':
@@ -69,7 +71,7 @@ class Browser:
             except Exception as e:
                 continue
         #TODO
-        if self.browser is None: 
+        if self.browser is None:
             return False
         #print (f'browser {self.version} starts')
         WIDTH = getenv('WIDTH')
@@ -108,7 +110,6 @@ class Browser:
         return None 
 
     def __screenshot_and_hash(self, name=None):
-        
         start = time.time()
         png = self.get_screenshot()
         if name:
@@ -128,8 +129,9 @@ class Browser:
                 self.browser.close()
                 self.browser.quit()
             except:
-                pass
+                return False
 
+        return True
 
     def get_source(self):
         try: return '<!DOCTYPE html>\n' + self.browser.page_source
@@ -155,9 +157,15 @@ class Browser:
         return None 
 
     def run_html(self, html_file: str):
+        if self.__num_of_run == 1000:
+            self.kill_browser()
+            self.setup_browser()
         self.repeatly_run(html_file)
         self.__num_of_run += 1
         return True
+
+    def clean_html(self):
+        self.browser.get('about:blank')
 
     def get_hash_from_html(self, html_file, save_shot: bool = False):
         ret = self.run_html(html_file)
