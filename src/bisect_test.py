@@ -39,8 +39,8 @@ class fake:
     crash = None
 
 # Bisects from start to end using the results in the bisect_results map. Each
-# value in bisect_results should be used exactly once, to ensure that we do not
-# do too many or too few tests.
+# value in bisect_results should be checked exactly once, to ensure that we do
+# not do too many or too few tests.
 def test_bisect_(start, end, bisect_results) -> int:
     def getPngByRevisionForTesting(rev):
         if rev in bisect_results:
@@ -48,11 +48,13 @@ def test_bisect_(start, end, bisect_results) -> int:
             # Delete the result because each result should only be tested once.
             del bisect_results[rev]
             return retval
-        raise RuntimeError('Bisected to incorrect revision')
+        raise RuntimeError('Bisected to an unexpected revision')
 
     empty = {}
     ioq = IOQueue(empty, [start, end], 0)
-    ioq.insert_to_queue((start, end, None), 'test', (getPngByRevisionForTesting(start), getPngByRevisionForTesting(end)))
+    start_value = getPngByRevisionForTesting(start)
+    end_value = getPngByRevisionForTesting(end)
+    ioq.insert_to_queue((start, end, None), 'test', (start_value, end_value))
 
     bi = BisectTester(ioq)
     bi.func = getPngByRevisionForTesting
@@ -60,10 +62,10 @@ def test_bisect_(start, end, bisect_results) -> int:
     bi.join()
     ioq.move_to_preqs()
     vers = ioq.get_vers()
-    if not vers:
-        raise RuntimeError('Did not get a bisect result')
     if len(bisect_results) != 0:
-        raise RuntimeError('Did not check all of the expected bisect results; failed to check results ' + str(bisect_results.keys()))
+        raise RuntimeError('Did not check all of the expected bisect results')
+    if not vers:
+        return None
     return vers[1]
 
 class TestBisecter(unittest.TestCase):
@@ -126,35 +128,18 @@ class TestBisecter(unittest.TestCase):
         }
         self.assertEqual(9, test_bisect_(5, 9, bisect_results))
 
-    def test_mid_crash_1(self):
+    # If we encounter a crash, bail. This could be improved by ignoring
+    # this revision and continuing the bisect, but this issue is fairly
+    # rare.
+    def test_mid_crash(self):
         bisect_results = {
           5: fake.png_a,
-          6: fake.png_b,
           7: fake.crash,
           9: fake.png_b,
         }
-        self.assertEqual(6, test_bisect_(5, 9, bisect_results))
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
-    def test_mid_crash_2(self):
-        bisect_results = {
-          5: fake.png_a,
-          6: fake.png_a,
-          7: fake.crash,
-          8: fake.png_b,
-          9: fake.png_b,
-        }
-        self.assertEqual(8, test_bisect_(5, 9, bisect_results))
-
-    def test_mid_crash_3(self):
-        bisect_results = {
-          5: fake.png_a,
-          6: fake.png_a,
-          7: fake.crash,
-          8: fake.png_a,
-          9: fake.png_b,
-        }
-        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
-
+    # See comment above |test_mid_crash|.
     def test_left_crash(self):
         bisect_results = {
           5: fake.png_a,
@@ -162,8 +147,9 @@ class TestBisecter(unittest.TestCase):
           7: fake.png_b,
           9: fake.png_b,
         }
-        self.assertEqual(7, test_bisect_(5, 9, bisect_results))
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
+    # See comment above |test_mid_crash|.
     def test_right_crash(self):
         bisect_results = {
           5: fake.png_a,
@@ -171,68 +157,36 @@ class TestBisecter(unittest.TestCase):
           8: fake.crash,
           9: fake.png_b,
         }
-        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
 
-    # If we encounter a "c" result, continue looking for the first rev
-    # where we get "b". We would not want to return a revision with a
-    # "c" result because we only know that "a" is good and "b" is bad,
-    # but we cannot say anything about "c".
-    def test_mid_c_1(self):
+    # If we encounter a result not equal to the start or end, bail. This
+    # could be improved by ignoring this revision and continuing the
+    # bisect, but this issue is fairly rare.
+    def test_mid_c(self):
         bisect_results = {
           5: fake.png_a,
           7: fake.png_c,
-          8: fake.png_a,
           9: fake.png_b,
         }
-        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
-    # See comment above |test_mid_c_1|.
-    def test_mid_c_2(self):
+    # See comment above |test_mid_c|.
+    def test_left_c(self):
         bisect_results = {
           5: fake.png_a,
-          7: fake.png_c,
-          8: fake.png_b,
+          6: fake.png_c,
+          7: fake.png_b,
           9: fake.png_b,
         }
-        self.assertEqual(8, test_bisect_(5, 9, bisect_results))
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
 
-    # See comment above |test_mid_c_1|.
-    def test_two_c(self):
+    # See comment above |test_mid_c|.
+    def test_right_c(self):
         bisect_results = {
           5: fake.png_a,
-          7: fake.png_c,
+          7: fake.png_a,
           8: fake.png_c,
           9: fake.png_b,
         }
-        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
-
-    def test_two_crash_1(self):
-        bisect_results = {
-          5: fake.png_a,
-          6: fake.crash,
-          7: fake.crash,
-          8: fake.png_b,
-          9: fake.png_b,
-        }
-        self.assertEqual(8, test_bisect_(5, 9, bisect_results))
-
-    def test_two_crash_2(self):
-        bisect_results = {
-          5: fake.png_a,
-          6: fake.crash,
-          7: fake.crash,
-          8: fake.png_a,
-          9: fake.png_b,
-        }
-        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
-
-    def test_two_crash_3(self):
-        bisect_results = {
-          5: fake.png_a,
-          6: fake.png_a,
-          7: fake.crash,
-          8: fake.crash,
-          9: fake.png_b,
-        }
-        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
+        self.assertEqual(None, test_bisect_(5, 9, bisect_results))
