@@ -38,17 +38,10 @@ class fake:
     png_c = 'fake_png_c'
     crash = None
 
+# Bisects from start to end using the results in the bisect_results map. Each
+# value in bisect_results should be used exactly once, to ensure that we do not
+# do too many or too few tests.
 def test_bisect_(start, end, bisect_results) -> int:
-    empty = {}
-    ioq = IOQueue(empty, [start, end], 0)
-    ioq.insert_to_queue((start, end, None), 'test', (bisect_results[start], bisect_results[end]))
-
-    # Delete the start and end results because they should only be tested once.
-    del bisect_results[start]
-    del bisect_results[end]
-
-    bi = BisectTester(ioq)
-
     def getPngByRevisionForTesting(rev):
         if rev in bisect_results:
             retval = bisect_results[rev]
@@ -56,6 +49,12 @@ def test_bisect_(start, end, bisect_results) -> int:
             del bisect_results[rev]
             return retval
         raise RuntimeError('Bisected to incorrect revision')
+
+    empty = {}
+    ioq = IOQueue(empty, [start, end], 0)
+    ioq.insert_to_queue((start, end, None), 'test', (getPngByRevisionForTesting(start), getPngByRevisionForTesting(end)))
+
+    bi = BisectTester(ioq)
     bi.func = getPngByRevisionForTesting
     bi.start()
     bi.join()
