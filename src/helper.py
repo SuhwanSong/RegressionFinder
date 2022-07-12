@@ -1,6 +1,5 @@
 import copy
 import time
-import signal
 import bisect
 import numpy as np
 
@@ -293,7 +292,7 @@ class IOQueue:
                     print (f'Chrome {cur_test[1]} in thread {cur_test[0]} is hanging ...', cur_test[2])
 
         for br in brs:
-            br.kill_browser()
+            br.kill_browser_by_pid()
 
 class FileManager:
     def get_all_files(root, ext=None):

@@ -1,15 +1,11 @@
 from os import environ, getenv
 from os.path import dirname, join, abspath, splitext
-import time
+import time, psutil
 from pathlib import Path
 from helper import ImageDiff
 from helper import FileManager
 
-#from jshelper import AHEM_FONT, NOSCROLLBAR
-#from jshelper import ALLSET, RESET, UNSET, NORM, FFAHEM, FAHEM, TEXTAREA 
-
 from selenium import webdriver
-
 from collections import defaultdict
 
 class Browser:
@@ -131,6 +127,21 @@ class Browser:
             except:
                 return False
 
+        return True
+
+    def kill_browser_by_pid(self):
+        if not self.browser: 
+            return False
+        br = self.browser
+        if not br.session_id or not br.service or not br.service.process:
+            return False
+        p = psutil.Process(br.service.process.pid)
+        for proc in p.children(recursive=True):
+            try:
+                proc.kill()
+            except Exception as e:
+                print (e)
+                continue
         return True
 
     def get_source(self):
