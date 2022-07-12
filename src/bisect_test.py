@@ -182,17 +182,16 @@ class TestBisecter(unittest.TestCase):
     def test_mid_c_1(self):
         bisect_results = {
           5: fake.png_a,
-          6: fake.png_b,
           7: fake.png_c,
+          8: fake.png_a,
           9: fake.png_b,
         }
-        self.assertEqual(6, test_bisect_(5, 9, bisect_results))
+        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
 
     # See comment above |test_mid_c_1|.
     def test_mid_c_2(self):
         bisect_results = {
           5: fake.png_a,
-          6: fake.png_a,
           7: fake.png_c,
           8: fake.png_b,
           9: fake.png_b,
@@ -200,43 +199,9 @@ class TestBisecter(unittest.TestCase):
         self.assertEqual(8, test_bisect_(5, 9, bisect_results))
 
     # See comment above |test_mid_c_1|.
-    def test_mid_c_3(self):
+    def test_two_c(self):
         bisect_results = {
           5: fake.png_a,
-          6: fake.png_a,
-          7: fake.png_c,
-          8: fake.png_a,
-          9: fake.png_b,
-        }
-        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
-
-    # See comment above |test_mid_c_1|.
-    def test_two_c_1(self):
-        bisect_results = {
-          5: fake.png_a,
-          6: fake.png_c,
-          7: fake.png_c,
-          8: fake.png_a,
-          9: fake.png_b,
-        }
-        self.assertEqual(9, test_bisect_(5, 9, bisect_results))
-
-    # See comment above |test_mid_c_1|.
-    def test_two_c_2(self):
-        bisect_results = {
-          5: fake.png_a,
-          6: fake.png_c,
-          7: fake.png_c,
-          8: fake.png_b,
-          9: fake.png_b,
-        }
-        self.assertEqual(8, test_bisect_(5, 9, bisect_results))
-
-    # See comment above |test_mid_c_1|.
-    def test_two_c_3(self):
-        bisect_results = {
-          5: fake.png_a,
-          6: fake.png_a,
           7: fake.png_c,
           8: fake.png_c,
           9: fake.png_b,
