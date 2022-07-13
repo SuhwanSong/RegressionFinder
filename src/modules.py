@@ -7,7 +7,7 @@ from pyvirtualdisplay import Display
 from os.path import basename, join, dirname
 
 from driver import Browser
-from typing import Optional
+from typing import Optional, Tuple
 
 from helper import IOQueue
 from helper import ImageDiff
@@ -40,7 +40,7 @@ class CrossVersion(Thread):
     def get_newer_browser(self) -> Browser:
         return self.__br_list[-1] if self.__br_list else None
 
-    def start_browsers(self, vers: tuple[int, int, int]) -> bool:
+    def start_browsers(self, vers: Tuple[int, int, int]) -> bool:
         self.stop_browsers()
         self.__br_list.append(Browser('chrome', vers[0]))
         self.__br_list.append(Browser('chrome', vers[1]))

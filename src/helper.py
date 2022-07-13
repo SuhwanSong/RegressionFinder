@@ -7,7 +7,7 @@ from queue import Queue
 from pathlib import Path
 from random import choice
 from threading import Lock
-from typing import Optional
+from typing import Optional, Tuple
 from shutil import copyfile
 from collections import defaultdict
 
@@ -114,13 +114,13 @@ class IOQueue:
         self.__build_lock.release()
 
 
-    def __select_vers(self) -> Optional[tuple[int, int, int]]:
+    def __select_vers(self) -> Optional[Tuple[int, int, int]]:
         keys = list(self.__preqs.keys())
         key =  choice(keys) if keys else None
         return key
 
 
-    def insert_to_queue(self, vers: tuple[int, int, int], html_file: str, hashes: tuple) -> None:
+    def insert_to_queue(self, vers: Tuple[int, int, int], html_file: str, hashes: tuple) -> None:
         with acquire_timeout(self.__queue_lock, -1) as acquired:
             if not acquired: return 
             value = [html_file, hashes]
@@ -149,13 +149,13 @@ class IOQueue:
             self.num_of_tests += 1
             return value
 
-    def get_vers(self) -> Optional[tuple[int, int, int]]:
+    def get_vers(self) -> Optional[Tuple[int, int, int]]:
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
             if not acquired: return 
             vers = self.__vers
             return vers
 
-    def update_postq(self, vers: tuple[int, int, int], html_file: str, hashes: tuple) -> None:
+    def update_postq(self, vers: Tuple[int, int, int], html_file: str, hashes: tuple) -> None:
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
             if not acquired: return 
             self.__postqs[vers].put((html_file, hashes))
