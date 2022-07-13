@@ -335,6 +335,7 @@ class Minimizer(CrossVersion):
         min_blocks = style_blocks
         min_indices = range(len(style_blocks))
 
+        trim_sizes = [ pow(2,i) for i in range(3,-1,-1) ]
         trim_sizes = [x for x in trim_sizes if x < len(style_blocks)]
         for trim_size in trim_sizes:
             for offset in range(1, len(style_blocks) - 2, trim_size):
