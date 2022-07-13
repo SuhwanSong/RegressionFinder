@@ -104,7 +104,7 @@ class CrossVersion(Thread):
                 if not self.start_browsers(cur_vers):
                     continue
 
-            hashes = self.cross_version_test_html_nth(html_file, 3)
+            hashes = self.cross_version_test_html_nth(html_file, 2)
             if self.is_bug(hashes):
               hpr.update_postq(vers, html_file, hashes)
 
@@ -320,7 +320,7 @@ class Minimizer(CrossVersion):
         copyfile(html_file, self.__temp_file)
 
         self.__min_html = FileManager.read_file(html_file)
-        hashes = self.cross_version_test_html_nth(html_file, 1) 
+        hashes = self.cross_version_test_html_nth(html_file, 0) 
         return self.is_bug(hashes)
 
 
@@ -363,7 +363,7 @@ class Minimizer(CrossVersion):
 
                 FileManager.write_file(self.__trim_file, tmp_html)
 
-                hashes = self.cross_version_test_html_nth(self.__trim_file, 1)
+                hashes = self.cross_version_test_html_nth(self.__trim_file, 0)
                 if self.is_bug(hashes):
                     min_blocks = tmp_blocks
                     min_indices = tmp_indices
@@ -415,7 +415,7 @@ class Minimizer(CrossVersion):
             if not text: continue
             FileManager.write_file(self.__trim_file, text)
             br.clean_html()
-            hashes = self.cross_version_test_html_nth(self.__trim_file, 1) 
+            hashes = self.cross_version_test_html_nth(self.__trim_file, 0) 
             if self.is_bug(hashes):
                 self.__min_html = text
                 FileManager.write_file(self.__temp_file, self.__min_html)
@@ -429,7 +429,7 @@ class Minimizer(CrossVersion):
                     if not text: continue
                     FileManager.write_file(self.__trim_file, text)
                     br.clean_html()
-                    hashes = self.cross_version_test_html_nth(self.__trim_file, 1) 
+                    hashes = self.cross_version_test_html_nth(self.__trim_file, 0) 
                     if self.is_bug(hashes):
                         self.__min_html = text
                         FileManager.write_file(self.__temp_file, self.__min_html)
@@ -595,7 +595,7 @@ class Preprocesser:
             self.test_wrapper(test)
 
         elapsed = time.time() - start
-        self.experiment_result['TOTAL TIME'] = timedelta(seconds=elapsed)
+        self.experiment_result['TOTAL TIME'] = str(timedelta(seconds=elapsed))
 
         if self.report:
             self.ioq.dump_queue_with_sort(os.path.join(self.out_dir, 'Report'))
@@ -658,9 +658,14 @@ class FirefoxRegression(Preprocesser):
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
-            ref_hash = ref_br.get_hash_from_html(html_file, True)
+            ref_hash = ref_br.get_hash_from_html(html_file, False)
             if ref_hash is None:
                 continue
+            try:
+                ref_hash = ref_br.get_hash_from_html(html_file, True)
+            except Exception as e:
+                print (e)
+
             if not ImageDiff.diff_images(hashes[0], ref_hash):
                 hpr.update_postq(vers, html_file, hashes)
 

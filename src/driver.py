@@ -110,13 +110,7 @@ class Browser:
         png = self.get_screenshot()
         if name:
             ImageDiff.save_image(name, png)
-        self.time['getscreenshot'] += time.time() - start
-        self.count['getscreenshot'] += 1
-
-        start = time.time()
         pixels = ImageDiff.get_phash(png)
-        self.time['convertscreenshot'] += time.time() - start
-        self.count['convertscreenshot'] += 1
         return pixels
 
     def kill_browser(self):

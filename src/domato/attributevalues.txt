@@ -1313,7 +1313,6 @@
 <valuetype_value> = ref
 
 <version_value> = 1
-<version_value> = -//W3C//DTD HTML 4.01 Transitional//EN
 <version_value> = 1.0
 <version_value> = 1.1
 

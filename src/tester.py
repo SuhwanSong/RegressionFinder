@@ -32,6 +32,7 @@ def main():
         shutil.rmtree(finder_dir)
     fd = FirefoxRegression(new_input_dir, finder_dir, args.job,
                            args.base, args.target, args.firefox)
+    fd.skip_minimizer()
     fd.process()
     fd.answer(args.answer)
 
@@ -42,6 +43,7 @@ def main():
 
     cr = ChromeRegression(new_input_dir, oracle_dir, args.job,
                            args.base, args.target, args.answer)
+    cr.skip_minimizer()
     cr.process()
 
     print (cr.experiment_result)
