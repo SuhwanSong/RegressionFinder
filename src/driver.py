@@ -129,13 +129,12 @@ class Browser:
         br = self.browser
         if not br.session_id or not br.service or not br.service.process:
             return False
-        p = psutil.Process(br.service.process.pid)
-        for proc in p.children(recursive=True):
-            try:
+        try:
+            p = psutil.Process(br.service.process.pid)
+            for proc in p.children(recursive=True):
                 proc.kill()
-            except Exception as e:
-                print (e)
-                continue
+        except Exception as e:
+            pass
         return True
 
     def get_source(self):

@@ -308,7 +308,7 @@ class Minimizer(CrossVersion):
         os.remove(self.__temp_file)
         os.remove(self.__trim_file)
 
-    def __initial_test(self, html_file):
+    def initial_test(self, html_file):
 
         self.__html_file = html_file
         self.__trim_file = join(dirname(html_file),
@@ -335,6 +335,7 @@ class Minimizer(CrossVersion):
         min_blocks = style_blocks
         min_indices = range(len(style_blocks))
 
+        trim_sizes = [ pow(2,i) for i in range(3,-1,-1) ]
         trim_sizes = [x for x in trim_sizes if x < len(style_blocks)]
         for trim_size in trim_sizes:
             for offset in range(1, len(style_blocks) - 2, trim_size):
@@ -386,7 +387,7 @@ class Minimizer(CrossVersion):
         min_style = '<style>\n' + ''.join(min_lines) + '\n</style>'
         return min_style
 
-    def __minimize_style(self):
+    def minimize_style(self):
         self.__cat_html = self.__min_html
         soup = BeautifulSoup(self.__cat_html, "lxml")
         if soup.style is not None and soup.style != " None":
@@ -395,7 +396,8 @@ class Minimizer(CrossVersion):
                 self.__cat_html = re.sub(re.compile(r'<style>.*?</style>', re.DOTALL), \
                                        min_style, self.__cat_html)
 
-                self.__min_html = [ line + '\n' for line in self.__cat_html.split('\n') ]
+                #self.__min_html = [ line + '\n' for line in self.__cat_html.split('\n') ]
+                self.__min_html = self.__cat_html
             except:
                 return
         else:
@@ -434,44 +436,8 @@ class Minimizer(CrossVersion):
                         self.__min_html = text
                         FileManager.write_file(self.__temp_file, self.__min_html)
 
-    def __minimize_line(self):
-        self.__in_html = self.__min_html.split('\n')
-        in_html_num_lines = len(self.__in_html)
-        self.__min_indices = range(in_html_num_lines) 
-
-        try_indices = []
-        for i, line in enumerate(self.__in_html):
-            try_indices.append(i)
-
-        trim_sizes = [x for x in trim_sizes if x < in_html_num_lines]
-
-        for trim_size in trim_sizes:
-            for offset in range(1, len(try_indices), trim_size):
-                if try_indices[offset] not in self.__min_indices:
-                    continue
-
-                trim_range = range(offset, min(offset + trim_size, len(try_indices)))
-                trim_indices = [ try_indices[i] for i in trim_range ]
-
-                min_html = []
-                min_indices = []
-                for i, line in enumerate(self.__in_html):
-                    if i not in trim_indices and i in self.__min_indices:
-                        min_html.append(line + '\n')
-                        min_indices.append(i)
-
-                min_html_str = ''.join(min_html)
-                FileManager.write_file(self.__trim_file, min_html_str)
-                br.clean_html()
-                hashes = self.cross_version_test_html_nth(self.__trim_file, 1) 
-                if self.is_bug(hashes):
-                    self.__min_html = min_html_str
-                    self.__min_indices = min_indices
-                    FileManager.write_file(self.__temp_file, self.__min_html)
-
     def __minimizing(self):
-        #self.__minimize_line()
-        self.__minimize_style()
+        self.minimize_style()
         self.__minimize_dom()
 
 
@@ -492,7 +458,7 @@ class Minimizer(CrossVersion):
                     continue
 
 
-            if self.__initial_test(html_file):
+            if self.initial_test(html_file):
                 self.__minimizing()
   
                 hashes = self.cross_version_test_html_nth(self.__temp_file, 1)
