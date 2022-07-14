@@ -19,7 +19,7 @@ from contextlib import contextmanager
 
 from PIL import Image
 from io import BytesIO
-from os import walk, kill, getenv
+from os import walk, listdir, getenv
 from os.path import join, dirname, abspath, exists, basename
 
 @contextmanager
@@ -194,14 +194,14 @@ class IOQueue:
     
 
     def dump_queue_as_csv(self, path):
-        header = ['base', 'target', 'ref', 'file']
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
             if not acquired: return 
             bug_commits = set()
-            all_commits = set(os.listdir(path))
-            with open(path, 'w') as fp:
-                c = csv.writer(fp)
-                c.writerow(header)
+            all_commits = set(listdir(dirname(path)))
+            with open(path, 'w') as csvfile:
+                header = ['base', 'target', 'ref', 'file']
+                csvfile.write(','.join(header))
+                csvfile.write('\n')
                 keys = sorted(list(self.__preqs.keys()))
                 for key in keys:
                     bug_commits.add(key[1])
@@ -209,11 +209,11 @@ class IOQueue:
                     for value in sorted(list(q.queue)):
                         html_file, hashes = value
                         base, target, ref = key
-                        c.writerow([str(base), str(target), str(ref), html_file])
+                        csvfile.write(f'{base}, {target}, {ref}, {html_file}\n')
                 total = len(all_commits)
                 tp = len(bug_commits)
                 fp = total - tp
-                fp.write(f'TOTAL: {total}, TP: {tp}, FP: {fp}')
+                csvfile.write(f'TOTAL: {total}, TP: {tp}, FP: {fp}\n')
 
     def dump_queue_with_sort(self, dir_path):
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
@@ -333,6 +333,9 @@ class VersionManager:
     def get_revision(self, version):
         return self.revlist[bisect.bisect_left(self.revlist, MILESTONE[version - 1]) - 1]
 
+    def get_end_revision(self, version):
+        return self.revlist[bisect.bisect_left(self.revlist, MILESTONE[version]) - 1]
+
     def get_rev_range(self, a, b):
         tmp = []
         rev_a = self.get_revision(a)
@@ -346,17 +349,21 @@ import hashlib
 class ImageDiff:
     def get_phash(png):
         stream = png if isinstance(png, str) else BytesIO(png)
-        with Image.open(stream, 'r') as image:
-            pixel = np.asarray(image)
-            return hashlib.sha1(pixel).hexdigest()
-            #return pixel
+        try:
+            with Image.open(stream, 'r') as image:
+                pixel = np.asarray(image)
+                return hashlib.sha1(pixel).hexdigest()
+        except Exception as e:
+            print (e)
 
     def diff_images(hash_A, hash_B):
         return hash_A != hash_B
-        #return not np.array_equal(hash_A, hash_B)
 
     def save_image(name, png):
-        stream = BytesIO(png)
-        im = Image.open(stream, 'r')
-        im.save(name)
-        im.close()
+        try:
+            stream = BytesIO(png)
+            im = Image.open(stream, 'r')
+            im.save(name)
+            im.close()
+        except Exception as e:
+            print (e)

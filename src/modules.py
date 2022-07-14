@@ -610,7 +610,7 @@ class FirefoxRegression(Preprocesser):
 
     def answer(self, answer_version) -> None:
         print ('answer step')
-        ref_br = Browser('chrome', self.vm.get_revision(answer_version))
+        ref_br = Browser('chrome', self.vm.get_end_revision(answer_version))
         ref_br.setup_browser()
 
         hpr = self.ioq
@@ -641,4 +641,3 @@ class FirefoxRegression(Preprocesser):
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
 
-        

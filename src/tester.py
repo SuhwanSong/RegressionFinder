@@ -18,6 +18,8 @@ def main():
     parser.add_argument('-i', '--input', required=False, type=str, default='', help='input directory')
     parser.add_argument('-o', '--output', required=True, type=str, help='output directory')
     parser.add_argument('-j', '--job', required=False, type=int, default=1, help='number of threads')
+    parser.add_argument('--baseline', action='store_true')
+
     args = parser.parse_args()
 
     seed(0)
@@ -41,12 +43,12 @@ def main():
     if exists(oracle_dir):
         shutil.rmtree(oracle_dir)
 
-    cr = ChromeRegression(new_input_dir, oracle_dir, args.job,
-                           args.base, args.target, args.answer)
-    cr.skip_minimizer()
-    cr.process()
-
-    print (cr.experiment_result)
+    if args.baseline:
+        cr = ChromeRegression(new_input_dir, oracle_dir, args.job,
+                            args.base, args.target, args.answer)
+        cr.skip_minimizer()
+        cr.process()
+        print (cr.experiment_result)
     print (fd.experiment_result)
 
 if __name__ == "__main__":
