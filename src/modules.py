@@ -308,7 +308,7 @@ class Minimizer(CrossVersion):
         os.remove(self.__temp_file)
         os.remove(self.__trim_file)
 
-    def initial_test(self, html_file):
+    def __initial_test(self, html_file):
 
         self.__html_file = html_file
         self.__trim_file = join(dirname(html_file),
@@ -360,7 +360,7 @@ class Minimizer(CrossVersion):
                 style_lines[idx] = tmp_line
 
                 tmp_html = re.sub(re.compile(r'<style>.*?</style>', re.DOTALL), \
-                                  '<style>\n' + ''.join(style_lines) + '\n</style>', self.__cat_html)
+                                  '<style>' + ''.join(style_lines) + '</style>', self.__cat_html)
 
                 FileManager.write_file(self.__trim_file, tmp_html)
 
@@ -384,10 +384,10 @@ class Minimizer(CrossVersion):
             min_line = self.__minimize_sline(i, min_lines)
             min_lines[i] = min_line
 
-        min_style = '<style>\n' + ''.join(min_lines) + '\n</style>'
+        min_style = '<style>\n' + ''.join(min_lines) + '</style>'
         return min_style
 
-    def minimize_style(self):
+    def __minimize_style(self):
         self.__cat_html = self.__min_html
         soup = BeautifulSoup(self.__cat_html, "lxml")
         if soup.style is not None and soup.style != " None":
@@ -396,7 +396,6 @@ class Minimizer(CrossVersion):
                 self.__cat_html = re.sub(re.compile(r'<style>.*?</style>', re.DOTALL), \
                                        min_style, self.__cat_html)
 
-                #self.__min_html = [ line + '\n' for line in self.__cat_html.split('\n') ]
                 self.__min_html = self.__cat_html
             except:
                 return
@@ -436,9 +435,54 @@ class Minimizer(CrossVersion):
                         self.__min_html = text
                         FileManager.write_file(self.__temp_file, self.__min_html)
 
+    def __minimize_inner_element(self):
+        br = self.get_newer_browser()
+        br.run_html(self.__temp_file)
+        attrs = br.exec_script(GET_ATTRNAMES)
+        if not attrs: return
+
+        for i in reversed(range(len(attrs))):
+            br.run_html(self.__temp_file)
+            br.exec_script(
+                f'temp1 = document.body.querySelectorAll(\'*\')[{i}];'.format(i) +
+                'if (temp1.nextElementSibling) {' +
+                'temp1.parentNode.append(...temp1.childNodes, temp1.nextElementSibling);}' +
+                'else { temp1.parentNode.append(...temp1.childNodes);} ' + 
+                'temp1.remove();'
+            )
+
+            text = br.get_source()
+            if not text: continue
+            FileManager.write_file(self.__trim_file, text)
+            br.clean_html()
+            hashes = self.cross_version_test_html_nth(self.__trim_file, 0) 
+            if self.is_bug(hashes):
+                self.__min_html = text
+                FileManager.write_file(self.__temp_file, self.__min_html)
+
+    def __minimize_text(self):
+        br = self.get_newer_browser()
+        br.run_html(self.__temp_file)
+        attrs = br.exec_script(GET_ATTRNAMES)
+        if not attrs: return
+
+        for i in reversed(range(len(attrs))):
+            br.run_html(self.__temp_file)
+            br.exec_script(f'document.body.querySelectorAll(\'*\')[{i}].textContent = \'\';')
+            text = br.get_source()
+            if not text: continue
+            FileManager.write_file(self.__trim_file, text)
+            br.clean_html()
+            hashes = self.cross_version_test_html_nth(self.__trim_file, 0) 
+            if self.is_bug(hashes):
+                self.__min_html = text
+                FileManager.write_file(self.__temp_file, self.__min_html)
+
     def __minimizing(self):
-        self.minimize_style()
+        self.__minimize_style()
         self.__minimize_dom()
+        self.__minimize_text()
+        self.__minimize_inner_element()
 
 
     def run(self) -> None:
@@ -457,8 +501,7 @@ class Minimizer(CrossVersion):
                 if not self.start_browsers(cur_vers):
                     continue
 
-
-            if self.initial_test(html_file):
+            if self.__initial_test(html_file):
                 self.__minimizing()
   
                 hashes = self.cross_version_test_html_nth(self.__temp_file, 1)
