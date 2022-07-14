@@ -2,6 +2,9 @@ import os
 import time
 import unittest
 
+import shutil
+import tempfile
+
 from helper import IOQueue
 from helper import FileManager
 from modules import Minimizer
@@ -17,20 +20,27 @@ class MinimizeTester(Minimizer):
         if self.func(text):
             return [1,0]
         else:
-            return [1,1] 
-
+            return [1,1]
 
 def minimize_(html, minimization_function):
-    random_name = time.time_ns()
-    path = f'/tmp/{random_name}.html'
-    FileManager.write_file(path, html)
-    ioq = IOQueue([path], [768959, 782790], None)
-    mn = MinimizeTester(ioq)
-    mn.func = minimization_function
-    mn.start()
-    mn.join()
-    min_path = f'/tmp/{random_name}-min.html'
-    html = FileManager.read_file(min_path)
+    try:
+        temp_output_dir = tempfile.mkdtemp()
+        temp_input = os.path.join(temp_output_dir, 'input.html')
+        temp_minimized = os.path.join(temp_output_dir, 'input-min.html')
+
+        FileManager.write_file(temp_input, html)
+
+        ioq = IOQueue([temp_input], [768959, 782790], None)
+        mn = MinimizeTester(ioq)
+        mn.func = minimization_function
+        mn.start()
+        mn.join()
+
+        html = FileManager.read_file(temp_minimized)
+
+    finally:
+        shutil.rmtree(temp_output_dir)
+
     html = html.replace('<html>','')
     html = html.replace('</html>','')
     html = html.replace('<head>','')
@@ -38,9 +48,6 @@ def minimize_(html, minimization_function):
     html = html.replace('<body>','')
     html = html.replace('</body>','')
     html = html.replace('\n\n\n', '\n')
-
-    os.remove(path)
-    os.remove(min_path)
     return html
 
 SIMPLE_HTML_TESTCASE = (
