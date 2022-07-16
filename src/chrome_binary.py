@@ -1,74 +1,62 @@
-import requests
 import os
 import sys
 
+import shutil
+import tempfile
+import requests
+
+from pathlib import Path
 from bs4 import BeautifulSoup
 
 def get_chromium_binary_download_url(position):
     url = f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{position}%2Fchrome-linux.zip?alt=media"
     return url
 
-def get_chromium_binary_name_position(position):
-    name = f"{position}-chrome-linux.zip"
-    return name
-
 def get_chromium_driver_download_url(position):
     url = f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{position}%2Fchromedriver_linux64.zip?alt=media"
     return url
 
-def get_chromium_driver_name_position(position):
-    name = f"{position}-chromedriver-linux64.zip"
-    return name
-
 def download(url, name, base="."):
-    r = requests.request("GET", url)
-
     try:
+        r = requests.request("GET", url)
         r.raise_for_status()
         with open(os.path.join(base, name), "wb") as f:
             for chunk in r:
                 f.write(chunk)
         return True
-    except:
+    except Exception as e:
         return False
 
-def download_chromium_position(position):
+
+# This function will download chrome revision and
+# use os.rename to avoid concurrency issues
+def download_chromium_position(outdir, position):
     if not position:
         print("[-] Version is not correct :(")
         return 1
 
     url = get_chromium_binary_download_url(position)
-    name = get_chromium_binary_name_position(position)
-    try:
-        ret = download(url, name)
-    except:
-        return 1
+    name = os.path.join(outdir, f'{position}.zip')
+    ret = download(url, name)
     if not ret:
         print("[-] No pre-built binary :(")
         return 1
 
-    outdir = f"/tmp/{position}"
-    os.system(f"mkdir -p {outdir}")
-    os.system(f"unzip {name} -d {outdir} &> /dev/null")
-    os.system(f"mv {outdir}/chrome-linux {position} &> /dev/null")
-    os.system(f"rm -rf {name} &> /dev/null")
+    os.system(f'unzip -q {name} -d {outdir}')
 
     url = get_chromium_driver_download_url(position)
-    name = get_chromium_driver_name_position(position)
-    try:
-        ret = download(url, name)
-    except:
-        return 1
-    
+    name = os.path.join(outdir, f'{position}-driver.zip')
+    ret = download(url, name)
     if not ret:
         print("[-] No pre-built binary :(")
         return 1
 
-    os.system(f"unzip {name} -d {outdir} &> /dev/null")
-    os.system(f"mv {outdir}/chromedriver_linux64/chromedriver {position} &> /dev/null")
-    os.system(f"rm -rf chromedriver_linux64 {name} &> /dev/null")
-    os.system(f"rm -rf {outdir}")
-    
+    os.system(f'unzip -q {name} -d {outdir}')
+
+    tmp_outdir = os.path.join(outdir, 'chrome-linux')
+    tmp_driver_path = os.path.join(outdir, 'chromedriver_linux64', 'chromedriver')
+    os.rename(tmp_driver_path, os.path.join(tmp_outdir, 'chromedriver'))
+    os.rename(tmp_outdir, str(position))
     return 0
 
 def get_commit_from_position(position):
@@ -87,17 +75,16 @@ def download_chrome_binary(tar, pos):
     pos = str(pos)
     cur = os.getcwd()
     os.chdir(tar)
-    if not os.path.exists(pos): 
-        try:
+    if os.path.exists(pos): 
+        return 
+    try:
+        with tempfile.TemporaryDirectory() as outdir:
             commit = get_commit_from_position(pos)
-            if commit != 0:
+            if commit:
                 print("downloading " + pos)
-                ret = download_chromium_position(pos)
-        except Exception as e:
-            print("exception", e)
-    else:
-        print("pass " + pos)
-
+                ret = download_chromium_position(outdir, pos)
+    except Exception as e:
+        print("exception", e)
     os.chdir(cur)
 
 def build_chrome_binary(pos):
@@ -116,16 +103,3 @@ def build_chrome_binary(pos):
             print("exception", e)
     else:
         print("pass " + pos)
-
-
-
-def main():
-    tar = sys.argv[1]
-    pos = sys.argv[2]
-    download_chrome_binary(tar, pos)
-    return 0
-
-
-if __name__ == "__main__":
-    ret = main()
-    exit(ret)

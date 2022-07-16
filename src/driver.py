@@ -1,5 +1,3 @@
-from os import environ, getenv
-from os.path import dirname, join, abspath, splitext
 import time, psutil
 from pathlib import Path
 from helper import ImageDiff
@@ -8,9 +6,20 @@ from helper import FileManager
 from selenium import webdriver
 from collections import defaultdict
 
+from os import environ, getenv
+from os.path import dirname, join, abspath, splitext, exists
+
+from chrome_binary import download_chrome_binary
+
 class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
         environ["DBUS_SESSION_BUS_ADDRESS"] = '/dev/null'
+
+        parent_dir = FileManager.get_parent_dir(__file__)
+        browser_dir = join(parent_dir, browser_type)
+        if not exists(browser_dir):
+            Path(browser_dir).mkdir(parents=True, exist_ok=True)
+        browser_path = join(browser_dir, str(commit_version), browser_type)
 
         if browser_type == 'chrome':
             options = [
@@ -20,6 +29,7 @@ class Browser:
                     '--disable-gpu',
                     ]
             self.options = webdriver.chrome.options.Options()
+            download_chrome_binary(browser_dir, commit_version)
 
         elif browser_type == 'firefox':
             options = [
@@ -31,11 +41,7 @@ class Browser:
         else:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
 
-        parent_dir = FileManager.get_parent_dir(__file__)
-        browser_dir = join(parent_dir, browser_type)
-        browser_path = join(browser_dir, str(commit_version), browser_type)
         self.options.binary_location = browser_path
-
         for op in options: self.options.add_argument(op)
 
         self.__num_of_run = 0
