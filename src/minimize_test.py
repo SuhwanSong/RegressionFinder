@@ -47,7 +47,7 @@ def minimize_(html, minimization_function):
     html = html.replace('</head>','')
     html = html.replace('<body>','')
     html = html.replace('</body>','')
-    html = html.replace('\n\n\n', '\n')
+    html = html.replace('\n\n', '\n')
     return html
 
 SIMPLE_HTML_TESTCASE = (
@@ -115,28 +115,26 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  div { }\n"
             "  span { }\n"
             "</style>\n") + just_html_part
         minimized = minimize_(SIMPLE_HTML_TESTCASE, minimization_function)
         self.assertEqual(expected, minimized)
 
-#    def test_minimize_to_single_string(self):
-#        def minimization_function(html):
-#            return 'hello world' in html
-#        expected = (
-#            "<!DOCTYPE html>\n"
-#            "<style>\n"
-#            "\n"
-#            "  div { }\n"
-#            "  span { }\n"
-#            "\n"
-#            "\n"
-#            "</style>\n"
-#            "hello world")
-#        minimized = minimize_(SIMPLE_HTML_TESTCASE, minimization_function)
-#        self.assertEqual(expected, minimized)
+    def test_minimize_to_single_string(self):
+        def minimization_function(html):
+            return 'hello world' in html
+        expected = (
+            "<!DOCTYPE html>\n"
+            "<style>\n"
+            "  div { }\n"
+            "  span { }\n"
+            "</style>\n"
+            "  \n"
+            "    hello world\n"
+            "  ")
+        minimized = minimize_(SIMPLE_HTML_TESTCASE, minimization_function)
+        self.assertEqual(expected, minimized)
 
     def test_minimize_to_outer_nested_element(self):
         def minimization_function(html):
@@ -144,33 +142,25 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  div { }\n"
             "  span { }\n"
             "</style>\n"
-            "<div>\n"
-            "  \n"
-            "</div>")
+            "<div></div>")
         minimized = minimize_(SIMPLE_HTML_TESTCASE, minimization_function)
         self.assertEqual(expected, minimized)
 
-#    def test_minimize_to_inner_nested_element(self):
-#        def minimization_function(html):
-#            return '<span>' in html and '</span>' in html
-#        expected = (
-#            "<!DOCTYPE html>\n"
-#            "<html><head><style>\n"
-#            "\n"
-#            "  div { }\n"
-#            "  span { }\n"
-#            "\n"
-#            "\n"
-#            "</style>\n"
-#            "</head><body><span>\n"
-#            "  \n"
-#            "</span></body></html>")
-#        minimized = minimize_(SIMPLE_HTML_TESTCASE, minimization_function)
-#        self.assertEqual(expected, minimized)
+    def test_minimize_to_inner_nested_element(self):
+        def minimization_function(html):
+            return '<span>' in html and '</span>' in html
+        expected = (
+            "<!DOCTYPE html>\n"
+            "<style>\n"
+            "  div { }\n"
+            "  span { }\n"
+            "</style>\n"
+            "  <span></span>\n")
+        minimized = minimize_(SIMPLE_HTML_TESTCASE, minimization_function)
+        self.assertEqual(expected, minimized)
 
     def test_minimize_to_single_style_selector_1(self):
         def minimization_function(html):
@@ -178,7 +168,6 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  a { background: red; }\n"
             "  b { }\n"
             "  c { }\n"
@@ -192,7 +181,6 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  a { }\n"
             "  b { background: green; }\n"
             "  c { }\n"
@@ -206,7 +194,6 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  a { }\n"
             "  b { }\n"
             "  c { background: blue; }\n"
@@ -220,7 +207,6 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  a { background: red; }\n"
             "</style>\n")
         minimized = minimize_(THREE_STYLE_RULE_TESTCASE, minimization_function)
@@ -232,7 +218,6 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  a { background: green; }\n"
             "</style>\n")
         minimized = minimize_(THREE_STYLE_RULE_TESTCASE, minimization_function)
@@ -244,7 +229,6 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  a { background: blue; }\n"
             "</style>\n")
         minimized = minimize_(THREE_STYLE_RULE_TESTCASE, minimization_function)
@@ -255,7 +239,7 @@ class TestMinimizer(unittest.TestCase):
             return "div id=\"a\"" in html
         expected = (
             "<!DOCTYPE html>\n"
-            "<div id=\"a\"></div>\n")
+            "<div id=\"a\"></div>\n\n")
         minimized = minimize_(THREE_DIV_TESTCASE, minimization_function)
         self.assertEqual(expected, minimized)
 
@@ -264,8 +248,7 @@ class TestMinimizer(unittest.TestCase):
             return 'div id=\"b\"' in html
         expected = (
             "<!DOCTYPE html>\n"
-            "\n"
-            "<div id=\"b\"></div>\n\n")
+            "<div id=\"b\"></div>\n")
         minimized = minimize_(THREE_DIV_TESTCASE, minimization_function)
         self.assertEqual(expected, minimized)
 
@@ -274,6 +257,7 @@ class TestMinimizer(unittest.TestCase):
             return 'div id=\"c\"' in html
         expected = (
             "<!DOCTYPE html>\n"
+            "\n"
             "<div id=\"c\"></div>\n")
         minimized = minimize_(THREE_DIV_TESTCASE, minimization_function)
         self.assertEqual(expected, minimized)
@@ -311,7 +295,6 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  div { background: blue; }\n"
             "  span { }\n"
             "</style>\n"
@@ -325,11 +308,9 @@ class TestMinimizer(unittest.TestCase):
         expected = (
             "<!DOCTYPE html>\n"
             "<style>\n"
-            "\n"
             "  div { }\n"
             "  span { color: green; }\n"
             "</style>\n"
-            "\n"
             "<span>foo</span>")
         minimized = minimize_(TWO_STYLED_ELEMENTS_TESTCASE, minimization_function)
         self.assertEqual(expected, minimized)
