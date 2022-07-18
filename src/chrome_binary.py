@@ -16,49 +16,6 @@ def get_chromium_driver_download_url(position):
     url = f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{position}%2Fchromedriver_linux64.zip?alt=media"
     return url
 
-def download(url, name, base="."):
-    try:
-        r = requests.request("GET", url)
-        r.raise_for_status()
-        with open(os.path.join(base, name), "wb") as f:
-            for chunk in r:
-                f.write(chunk)
-        return True
-    except Exception as e:
-        return False
-
-
-# This function will download chrome revision and
-# use os.rename to avoid concurrency issues
-def download_chromium_position(outdir, position):
-    if not position:
-        print("[-] Version is not correct :(")
-        return 1
-
-    url = get_chromium_binary_download_url(position)
-    name = os.path.join(outdir, f'{position}.zip')
-    ret = download(url, name)
-    if not ret:
-        print("[-] No pre-built binary :(")
-        return 1
-
-    os.system(f'unzip -q {name} -d {outdir}')
-
-    url = get_chromium_driver_download_url(position)
-    name = os.path.join(outdir, f'{position}-driver.zip')
-    ret = download(url, name)
-    if not ret:
-        print("[-] No pre-built binary :(")
-        return 1
-
-    os.system(f'unzip -q {name} -d {outdir}')
-
-    tmp_outdir = os.path.join(outdir, 'chrome-linux')
-    tmp_driver_path = os.path.join(outdir, 'chromedriver_linux64', 'chromedriver')
-    os.rename(tmp_driver_path, os.path.join(tmp_outdir, 'chromedriver'))
-    os.rename(tmp_outdir, str(position))
-    return 0
-
 def get_commit_from_position(position):
     URL = 'https://crrev.com/' + str(position)
     response = requests.get(URL)
@@ -68,24 +25,56 @@ def get_commit_from_position(position):
     else:
         soup = BeautifulSoup(response.text, "lxml")
         title = soup.title.string.split(' - ')[0]
-        print (title)
         return title
 
+# This function will download chrome revision and
+# use os.rename to avoid concurrency issues
 def download_chrome_binary(tar, pos):
+    def download(url, name, base="."):
+        try:
+            r = requests.request("GET", url)
+            r.raise_for_status()
+            with open(os.path.join(base, name), "wb") as f:
+                for chunk in r:
+                    f.write(chunk)
+            return True
+        except Exception as e:
+            return False
+
     pos = str(pos)
-    cur = os.getcwd()
-    os.chdir(tar)
-    if os.path.exists(pos): 
-        return 
+    binary_dir_path = os.path.join(tar, pos)
+    if os.path.exists(binary_dir_path):
+        return
+    commit = get_commit_from_position(pos)
+    if not commit:
+        return
+
     try:
         with tempfile.TemporaryDirectory() as outdir:
-            commit = get_commit_from_position(pos)
-            if commit:
-                print("downloading " + pos)
-                ret = download_chromium_position(outdir, pos)
+            print(f"downloading chrome {pos} at {outdir}")
+            url = get_chromium_binary_download_url(pos)
+            filename = f'{pos}.zip'
+            filename_path = os.path.join(outdir, filename)
+            ret = download(url, filename, outdir)
+            if not ret:
+                print("[-] No pre-built binary :(")
+                return
+            os.system(f'unzip -q {filename_path} -d {outdir}')
+            url = get_chromium_driver_download_url(pos)
+            filename = f'{pos}-driver.zip'
+            filename_path = os.path.join(outdir, filename)
+            ret = download(url, filename, outdir)
+            if not ret:
+                print("[-] No pre-built binary :(")
+                return
+            os.system(f'unzip -q {filename_path} -d {outdir}')
+            tmp_outdir = os.path.join(outdir, 'chrome-linux')
+            tmp_driver_path = os.path.join(outdir, 'chromedriver_linux64', 'chromedriver')
+            os.rename(tmp_driver_path, os.path.join(tmp_outdir, 'chromedriver'))
+            os.rename(tmp_outdir, os.path.join(tar,pos))
+
     except Exception as e:
         print("exception", e)
-    os.chdir(cur)
 
 def build_chrome_binary(pos):
     pos = str(pos)
