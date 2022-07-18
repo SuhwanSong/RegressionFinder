@@ -98,9 +98,6 @@ class CrossVersion(Thread):
 
             if cur_vers != vers:
                 cur_vers = vers
-
-                hpr.download_chrome(cur_vers[0])
-                hpr.download_chrome(cur_vers[1])
                 if not self.start_browsers(cur_vers):
                     continue
 
@@ -191,7 +188,7 @@ class Bisecter(Thread):
             self.ref_br = None
 
     def get_chrome(self, ver: int) -> None:
-        self.helper.download_chrome(ver)
+        pass
 
     def get_pixel_from_html(self, html_file):
         return self.ref_br.get_hash_from_html(html_file, self.saveshot)
