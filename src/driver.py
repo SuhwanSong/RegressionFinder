@@ -9,7 +9,7 @@ from collections import defaultdict
 from os import environ, getenv
 from os.path import dirname, join, abspath, splitext, exists
 
-from chrome_binary import download_chrome_binary
+from chrome_binary import ensure_chrome_binaries
 
 class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
@@ -29,7 +29,7 @@ class Browser:
                     '--disable-gpu',
                     ]
             self.options = webdriver.chrome.options.Options()
-            download_chrome_binary(browser_dir, commit_version)
+            ensure_chrome_binaries(browser_dir, commit_version)
 
         elif browser_type == 'firefox':
             options = [
@@ -72,10 +72,10 @@ class Browser:
 
             except Exception as e:
                 continue
-        #TODO
+
+        # System crashes if fails to start browser.
         if self.browser is None:
-            return False
-        #print (f'browser {self.version} starts')
+            sys.exit(f"Browser {version} fails to start..")
         WIDTH = getenv('WIDTH')
         WIDTH = 800 if not WIDTH else int(WIDTH)
         HEIGHT = getenv('HEIGHT')

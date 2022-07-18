@@ -12,7 +12,6 @@ from shutil import copyfile
 from collections import defaultdict
 
 from chrome_binary import build_chrome_binary
-from chrome_binary import download_chrome_binary
 from chrome_binary import get_commit_from_position
 
 from contextlib import contextmanager

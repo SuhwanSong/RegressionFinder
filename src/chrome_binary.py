@@ -27,9 +27,10 @@ def get_commit_from_position(position):
         title = soup.title.string.split(' - ')[0]
         return title
 
-# This function will download chrome revision and
-# use os.rename to avoid concurrency issues
-def download_chrome_binary(tar, pos):
+# Ensures chrome binaries (chrome + chromedriver) exist in path/revision/. If
+# they do not exist, they will be downloaded. This function returns True if the
+# binaries exist.
+def ensure_chrome_binaries(path, revision):
     def download(url, name, base="."):
         try:
             r = requests.request("GET", url)
@@ -41,54 +42,50 @@ def download_chrome_binary(tar, pos):
         except Exception as e:
             return False
 
-    pos = str(pos)
-    binary_dir_path = os.path.join(tar, pos)
+    revision = str(revision)
+    binary_dir_path = os.path.join(path, revision)
     if os.path.exists(binary_dir_path):
-        return
-    commit = get_commit_from_position(pos)
-    if not commit:
-        return
+        return True
 
-    try:
-        with tempfile.TemporaryDirectory() as outdir:
-            print(f"downloading chrome {pos} at {outdir}")
-            url = get_chromium_binary_download_url(pos)
-            filename = f'{pos}.zip'
-            filename_path = os.path.join(outdir, filename)
-            ret = download(url, filename, outdir)
-            if not ret:
-                print("[-] No pre-built binary :(")
-                return
-            os.system(f'unzip -q {filename_path} -d {outdir}')
-            url = get_chromium_driver_download_url(pos)
-            filename = f'{pos}-driver.zip'
-            filename_path = os.path.join(outdir, filename)
-            ret = download(url, filename, outdir)
-            if not ret:
-                print("[-] No pre-built binary :(")
-                return
-            os.system(f'unzip -q {filename_path} -d {outdir}')
-            tmp_outdir = os.path.join(outdir, 'chrome-linux')
-            tmp_driver_path = os.path.join(outdir, 'chromedriver_linux64', 'chromedriver')
-            os.rename(tmp_driver_path, os.path.join(tmp_outdir, 'chromedriver'))
-            os.rename(tmp_outdir, os.path.join(tar,pos))
+    # Multiple threads may call this function simultaneously. To prevent races,
+    # a temporary directory is used for downloading, and an atomic rename is
+    # used to update the binaries once they are available.
+    with tempfile.TemporaryDirectory() as outdir:
+        print(f"downloading chrome {revision} at {outdir}")
+        url = get_chromium_binary_download_url(revision)
+        filename = f'{revision}.zip'
+        filename_path = os.path.join(outdir, filename)
+        ret = download(url, filename, outdir)
+        if not ret:
+            raise ValueError("Failed to download chrome binary at " + url)
+        os.system(f'unzip -q {filename_path} -d {outdir}')
+        url = get_chromium_driver_download_url(revision)
+        filename = f'{revision}-driver.zip'
+        filename_path = os.path.join(outdir, filename)
+        ret = download(url, filename, outdir)
+        if not ret:
+            raise ValueError("Failed to download chromedriver binary at " + url)
 
-    except Exception as e:
-        print("exception", e)
+        os.system(f'unzip -q {filename_path} -d {outdir}')
+        tmp_outdir = os.path.join(outdir, 'chrome-linux')
+        tmp_driver_path = os.path.join(outdir, 'chromedriver_linux64', 'chromedriver')
+        os.rename(tmp_driver_path, os.path.join(tmp_outdir, 'chromedriver'))
+        os.rename(tmp_outdir, os.path.join(path, revision))
+    return True
 
-def build_chrome_binary(pos):
-    pos = str(pos)
-    if not os.path.exists(pos): 
+def build_chrome_binary(revision):
+    revision = str(revision)
+    if not os.path.exists(revision): 
         try:
-            commit = get_commit_from_position(pos)
+            commit = get_commit_from_position(revision)
             cur_path = os.path.dirname(os.path.abspath(__file__))
             br_build = os.path.join(cur_path, 'build_chrome.sh')
 
             if commit != 0:
-                command = f'{br_build} {commit} {pos}'
+                command = f'{br_build} {commit} {revision}'
                 print (command)
                 ret = os.system(command)
         except Exception as e:
             print("exception", e)
     else:
-        print("pass " + pos)
+        print("pass " + revision)

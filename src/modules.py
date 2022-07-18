@@ -189,7 +189,6 @@ class Bisecter(Thread):
 
     def get_chrome(self, ver: int) -> None:
         pass
-        #self.helper.download_chrome(ver)
 
     def get_pixel_from_html(self, html_file):
         return self.ref_br.get_hash_from_html(html_file, self.saveshot)
