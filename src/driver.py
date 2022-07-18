@@ -11,6 +11,15 @@ from os.path import dirname, join, abspath, splitext, exists
 
 from chrome_binary import ensure_chrome_binaries
 
+GET_ATTRNAMES="""
+let attrs = [];
+const elements = document.body.querySelectorAll('*');
+for (var i = 0; i < elements.length; i++) {
+  attrs.push(elements[i].getAttributeNames());
+}
+return attrs;
+"""
+
 class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
         environ["DBUS_SESSION_BUS_ADDRESS"] = '/dev/null'
@@ -50,13 +59,8 @@ class Browser:
         self.browser = None
         self.version = commit_version
 
-        self.time = defaultdict(float)
-        self.count = defaultdict(int)
-        self.flak = defaultdict(int)
-
     def setup_browser(self):
         self.__num_of_run = 0
-        start = time.time()
         self.browser = None
         for _ in range(5):
             try:
@@ -86,7 +90,6 @@ class Browser:
         self.browser.set_script_timeout(TIMEOUT)
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
-        self.time['setup'] += time.time() - start
         return True
 
 
@@ -112,7 +115,6 @@ class Browser:
         return None 
 
     def __screenshot_and_hash(self, name=None):
-        start = time.time()
         png = self.get_screenshot()
         if name:
             ImageDiff.save_image(name, png)
@@ -185,3 +187,7 @@ class Browser:
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
         hash_v = self.__screenshot_and_hash(screenshot_name)
         return hash_v
+
+
+    def get_dom_tree_info(self):
+        return self.exec_script(GET_ATTRNAMES)
