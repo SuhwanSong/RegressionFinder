@@ -23,8 +23,6 @@ from pathlib import Path
 from shutil import copyfile
 from bs4 import BeautifulSoup
 
-from jshelper import GET_ATTRNAMES
-
 
 class CrossVersion(Thread):
     def __init__(self, helper: IOQueue) -> None:
@@ -402,7 +400,7 @@ class Minimizer(CrossVersion):
     def __minimize_dom(self):
         br = self.get_newer_browser()
         br.run_html(self.__temp_file)
-        attrs = br.exec_script(GET_ATTRNAMES)
+        attrs = br.get_dom_tree_info()
         if not attrs: return
 
         for i in reversed(range(len(attrs))):
@@ -435,7 +433,7 @@ class Minimizer(CrossVersion):
     def __minimize_inner_element(self):
         br = self.get_newer_browser()
         br.run_html(self.__temp_file)
-        attrs = br.exec_script(GET_ATTRNAMES)
+        attrs = br.get_dom_tree_info()
         if not attrs: return
 
         for i in reversed(range(len(attrs))):
@@ -460,7 +458,7 @@ class Minimizer(CrossVersion):
     def __minimize_text(self):
         br = self.get_newer_browser()
         br.run_html(self.__temp_file)
-        attrs = br.exec_script(GET_ATTRNAMES)
+        attrs = br.get_dom_tree_info()
         if not attrs: return
 
         for i in reversed(range(len(attrs))):
