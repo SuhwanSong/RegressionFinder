@@ -8,13 +8,41 @@ import requests
 from pathlib import Path
 from bs4 import BeautifulSoup
 
+
 def get_chromium_binary_download_url(position):
-    url = f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{position}%2Fchrome-linux.zip?alt=media"
-    return url
+    platform = sys.platform
+
+    # linux_x64
+    if platform == "linux":
+        dirname = 'Linux_x64'
+        filename = 'chrome-linux.zip'
+
+    # mac_x64
+    elif platform == "darwin":
+        dirname = 'Mac'
+        filename = 'chrome-mac.zip'
+    else:
+        # TODO
+        pass
+    return f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/{dirname}%2F{position}%2F{filename}?alt=media"
 
 def get_chromium_driver_download_url(position):
-    url = f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{position}%2Fchromedriver_linux64.zip?alt=media"
-    return url
+    platform = sys.platform
+
+    # linux_x64
+    if platform == "linux":
+        dirname = 'Linux_x64'
+        filename = 'chromedriver_linux64.zip'
+
+    # mac_x64
+    elif platform == "darwin":
+        dirname = 'Mac'
+        filename = 'chromedriver_mac64.zip'
+
+    else:
+        # TODO
+        pass
+    return f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/{dirname}%2F{position}%2F{filename}?alt=media"
 
 def get_commit_from_position(position):
     URL = 'https://crrev.com/' + str(position)

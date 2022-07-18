@@ -7,6 +7,7 @@ import tempfile
 
 from helper import IOQueue
 from helper import FileManager
+from helper import VersionManager
 from modules import Minimizer
 
 class MinimizeTester(Minimizer):
@@ -30,7 +31,11 @@ def minimize_(html, minimization_function):
 
         FileManager.write_file(temp_input, html)
 
-        ioq = IOQueue([temp_input], [768959, 782790], None)
+        vm = VersionManager()
+        rev1 = vm.get_revision(90)
+        rev2 = vm.get_revision(91)
+
+        ioq = IOQueue([temp_input], [rev1, rev2], None)
         mn = MinimizeTester(ioq)
         mn.func = minimization_function
         mn.start()
