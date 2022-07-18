@@ -12,7 +12,6 @@ from shutil import copyfile
 from collections import defaultdict
 
 from chrome_binary import build_chrome_binary
-from chrome_binary import download_chrome_binary
 from chrome_binary import get_commit_from_position
 
 from contextlib import contextmanager
@@ -90,17 +89,6 @@ class IOQueue:
     def reset_lock(self):
         if self.__queue_lock.locked():
             self.__queue_lock.release()
-
-
-    def download_chrome(self, commit_version: int) -> None:
-        browser_type = 'chrome'
-        self.__queue_lock.acquire()
-        parent_dir = FileManager.get_parent_dir(__file__)
-        browser_dir = join(parent_dir, browser_type)
-        browser_path = join(browser_dir, str(commit_version), browser_type)
-        if not exists(browser_path):
-            download_chrome_binary(browser_dir, commit_version)
-        self.__queue_lock.release()
 
     def build_chrome(self, commit_version: int) -> None:
         browser_type = 'chrome'
@@ -367,3 +355,4 @@ class ImageDiff:
             im.close()
         except Exception as e:
             print (e)
+
