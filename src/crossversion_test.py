@@ -1,8 +1,6 @@
 import os
-import time
 import unittest
 
-import shutil
 import tempfile
 
 from helper import IOQueue
