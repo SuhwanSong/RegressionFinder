@@ -9,7 +9,7 @@ from collections import defaultdict
 from os import environ, getenv
 from os.path import dirname, join, abspath, splitext, exists
 
-from chrome_binary import ensure_chrome_binaries
+from chrome_binary import ChromeBinary
 
 GET_ATTRNAMES="""
 let attrs = [];
@@ -38,7 +38,7 @@ class Browser:
                     '--disable-gpu',
                     ]
             self.options = webdriver.chrome.options.Options()
-            ensure_chrome_binaries(browser_dir, commit_version)
+            ChromeBinary().ensure_chrome_binaries(browser_dir, commit_version)
 
         elif browser_type == 'firefox':
             options = [
