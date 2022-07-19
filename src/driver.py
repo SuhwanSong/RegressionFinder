@@ -1,3 +1,4 @@
+import sys
 import time, psutil
 from pathlib import Path
 from helper import ImageDiff
