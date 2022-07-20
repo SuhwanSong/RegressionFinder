@@ -24,6 +24,11 @@ return attrs;
 class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
         environ["DBUS_SESSION_BUS_ADDRESS"] = '/dev/null'
+        width = getenv('width')
+        height = getenv('height')
+
+        self.__width = 800 if not width else int(width)
+        self.__height = 300 if not height else int(height)
 
         parent_dir = FileManager.get_parent_dir(__file__)
         browser_dir = join(parent_dir, browser_type)
@@ -36,6 +41,7 @@ class Browser:
                     '--disable-seccomp-sandbox',
                     '--disable-logging',
                     '--disable-gpu',
+                    f'--window-size={self.__width},{self.__height}',
                     ]
             self.options = webdriver.chrome.options.Options()
             cb = ChromeBinary()
@@ -46,7 +52,9 @@ class Browser:
         elif browser_type == 'firefox':
             options = [
                     '--headless',
-                    '--disable-gpu'
+                    '--disable-gpu',
+                    f'--width={self.__width}',
+                    f'--height={self.__height}',
                     ]
             self.options = webdriver.firefox.options.Options()
             browser_path = join(browser_dir, str(commit_version), browser_type)
@@ -85,13 +93,9 @@ class Browser:
         if self.browser is None:
             print (f"Browser {self.version} fails to start..")
             sys.exit(1)
-        WIDTH = getenv('WIDTH')
-        WIDTH = 800 if not WIDTH else int(WIDTH)
-        HEIGHT = getenv('HEIGHT')
-        HEIGHT = 300 if not HEIGHT else int(HEIGHT)
         TIMEOUT = 10
 
-        self.__set_viewport_size(WIDTH, HEIGHT)
+        self.__adjust_viewport_size()
         self.browser.set_script_timeout(TIMEOUT)
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
@@ -105,6 +109,12 @@ class Browser:
         """, width, height)
         self.browser.set_window_size(*window_size)
 
+    # Adjust viewport size to 800x300 due to firefox 
+    def __adjust_viewport_size(self):
+        width, height = self.exec_script('return [window.innerWidth, window.innerHeight]')
+        self.browser.set_window_size(
+                self.__width + (self.__width - width),
+                self.__height + (self.__height - height))
 
     def get_screenshot(self):
         for attempt in range(5):
