@@ -46,18 +46,20 @@ class ChromeBinary:
         platform_names = {'linux': 'Linux_x64', 'darwin': 'Mac'}
         chrome_binaries = {'linux': 'chrome-linux', 'darwin': 'chrome-mac'}
         chrome_driver_binaries = {'linux': 'chromedriver_linux64', 'darwin': 'chromedriver_mac64'}
+        chrome_binary_paths = {'linux': 'chrome', 'darwin': 'Chromium.app/Contents/MacOS/Chromium'}
 
-        self.platform_name = platform_names[platform]
-        self.chrome_binary = chrome_binaries[platform]
-        self.chrome_driver_binary = chrome_driver_binaries[platform]
+        self.__platform_name = platform_names[platform]
+        self.__chrome_binary = chrome_binaries[platform]
+        self.__chrome_driver_binary = chrome_driver_binaries[platform]
+        self.__chrome_binary_path = chrome_binary_paths[platform]
 
-        self.url_prefix = "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/"
+        self.__url_prefix = "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/"
 
-    def get_chromium_binary_download_url(self, revision):
-        return self.url_prefix + f"{self.platform_name}%2F{revision}%2F{self.chrome_binary}.zip?alt=media"
+    def __get_chromium_binary_download_url(self, revision):
+        return self.__url_prefix + f"{self.__platform_name}%2F{revision}%2F{self.__chrome_binary}.zip?alt=media"
 
-    def get_chromium_driver_download_url(self, revision):
-        return self.url_prefix + f"{self.platform_name}%2F{revision}%2F{self.chrome_driver_binary}.zip?alt=media"
+    def __get_chromium_driver_download_url(self, revision):
+        return self.__url_prefix + f"{self.__platform_name}%2F{revision}%2F{self.__chrome_driver_binary}.zip?alt=media"
 
 
     # Ensures chrome binaries (chrome + chromedriver) exist in path/revision/. If
@@ -85,14 +87,14 @@ class ChromeBinary:
         # used to update the binaries once they are available.
         with tempfile.TemporaryDirectory() as outdir:
             print(f"downloading chrome {revision} at {outdir}")
-            url = self.get_chromium_binary_download_url(revision)
+            url = self.__get_chromium_binary_download_url(revision)
             filename = f'{revision}.zip'
             filename_path = os.path.join(outdir, filename)
             ret = download(url, filename, outdir)
             if not ret:
                 raise ValueError("Failed to download chrome binary at " + url)
             os.system(f'unzip -q {filename_path} -d {outdir}')
-            url = self.get_chromium_driver_download_url(revision)
+            url = self.__get_chromium_driver_download_url(revision)
             filename = f'{revision}-driver.zip'
             filename_path = os.path.join(outdir, filename)
             ret = download(url, filename, outdir)
@@ -100,8 +102,11 @@ class ChromeBinary:
                 raise ValueError("Failed to download chromedriver binary at " + url)
 
             os.system(f'unzip -q {filename_path} -d {outdir}')
-            tmp_outdir = os.path.join(outdir, self.chrome_binary)
-            tmp_driver_path = os.path.join(outdir, self.chrome_driver_binary, 'chromedriver')
+            tmp_outdir = os.path.join(outdir, self.__chrome_binary)
+            tmp_driver_path = os.path.join(outdir, self.__chrome_driver_binary, 'chromedriver')
             os.rename(tmp_driver_path, os.path.join(tmp_outdir, 'chromedriver'))
             os.rename(tmp_outdir, os.path.join(path, revision))
         return True
+
+    def get_browser_path(self, path, revision):
+        return os.path.join(path, str(revision), self.__chrome_binary_path)

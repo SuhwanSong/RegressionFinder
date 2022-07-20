@@ -29,7 +29,6 @@ class Browser:
         browser_dir = join(parent_dir, browser_type)
         if not exists(browser_dir):
             Path(browser_dir).mkdir(parents=True, exist_ok=True)
-        browser_path = join(browser_dir, str(commit_version), browser_type)
 
         if browser_type == 'chrome':
             options = [
@@ -39,7 +38,9 @@ class Browser:
                     '--disable-gpu',
                     ]
             self.options = webdriver.chrome.options.Options()
-            ChromeBinary().ensure_chrome_binaries(browser_dir, commit_version)
+            cb = ChromeBinary()
+            cb.ensure_chrome_binaries(browser_dir, commit_version)
+            browser_path = cb.get_browser_path(browser_dir, commit_version)
 
         elif browser_type == 'firefox':
             options = [
@@ -47,6 +48,7 @@ class Browser:
                     '--disable-gpu'
                     ]
             self.options = webdriver.firefox.options.Options()
+            browser_path = join(browser_dir, str(commit_version), browser_type)
 
         else:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
@@ -80,7 +82,8 @@ class Browser:
 
         # System crashes if fails to start browser.
         if self.browser is None:
-            sys.exit(f"Browser {version} fails to start..")
+            print (f"Browser {self.version} fails to start..")
+            sys.exit(1)
         WIDTH = getenv('WIDTH')
         WIDTH = 800 if not WIDTH else int(WIDTH)
         HEIGHT = getenv('HEIGHT')
