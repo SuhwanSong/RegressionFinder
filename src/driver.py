@@ -41,6 +41,7 @@ class Browser:
             cb = ChromeBinary()
             cb.ensure_chrome_binaries(browser_dir, commit_version)
             browser_path = cb.get_browser_path(browser_dir, commit_version)
+            self.__driver_path = cb.get_driver_path(browser_dir, commit_version)
 
         elif browser_type == 'firefox':
             options = [
@@ -49,7 +50,7 @@ class Browser:
                     ]
             self.options = webdriver.firefox.options.Options()
             browser_path = join(browser_dir, str(commit_version), browser_type)
-
+            self.__driver_path = browser_path + 'driver'
         else:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
 
@@ -69,10 +70,10 @@ class Browser:
             try:
                 if self.__browser_type == 'chrome':
                     self.browser = webdriver.Chrome(options=self.options,
-                            executable_path=self.options.binary_location + 'driver')
+                            executable_path=self.__driver_path)
                 elif self.__browser_type == 'firefox':
                     self.browser = webdriver.Firefox(options=self.options,
-                            executable_path=self.options.binary_location + 'driver')
+                            executable_path=self.__driver_path)
                 else:
                     raise ValueError('Check browser type')
                 break
@@ -116,7 +117,7 @@ class Browser:
             except Exception as e:
                 continue
 
-        return None 
+        return None
 
     def __screenshot_and_hash(self, name=None):
         png = self.get_screenshot()
@@ -136,7 +137,7 @@ class Browser:
         return True
 
     def kill_browser_by_pid(self):
-        if not self.browser: 
+        if not self.browser:
             return False
         br = self.browser
         if not br.session_id or not br.service or not br.service.process:
@@ -166,11 +167,11 @@ class Browser:
                 self.setup_browser()
             try:
                 self.browser.get('file://' + abspath(html_file))
-                return 
+                return
             except Exception as e:
                 continue
 
-        return None 
+        return None
 
     def run_html(self, html_file: str):
         if self.__num_of_run == 1000:
@@ -185,7 +186,7 @@ class Browser:
 
     def get_hash_from_html(self, html_file, save_shot: bool = False):
         ret = self.run_html(html_file)
-        if not ret: return 
+        if not ret: return
 
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None

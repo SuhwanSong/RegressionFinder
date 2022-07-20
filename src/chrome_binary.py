@@ -21,7 +21,7 @@ def get_commit_from_position(position):
 
 def build_chrome_binary(revision):
     revision = str(revision)
-    if not os.path.exists(revision): 
+    if not os.path.exists(revision):
         try:
             commit = get_commit_from_position(revision)
             cur_path = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +39,8 @@ def build_chrome_binary(revision):
 
 class ChromeBinary:
     def __init__(self):
+
+        self.__drivername = 'chromedriver'
         platform = sys.platform
 
         # linux, mac (x64 or arm) We currently use the x64 binaries on arm
@@ -103,10 +105,13 @@ class ChromeBinary:
 
             os.system(f'unzip -q {filename_path} -d {outdir}')
             tmp_outdir = os.path.join(outdir, self.__chrome_binary)
-            tmp_driver_path = os.path.join(outdir, self.__chrome_driver_binary, 'chromedriver')
-            os.rename(tmp_driver_path, os.path.join(tmp_outdir, 'chromedriver'))
+            tmp_driver_path = os.path.join(outdir, self.__chrome_driver_binary, self.__drivername)
+            os.rename(tmp_driver_path, os.path.join(tmp_outdir, self.__drivername))
             os.rename(tmp_outdir, os.path.join(path, revision))
         return True
 
     def get_browser_path(self, path, revision):
         return os.path.join(path, str(revision), self.__chrome_binary_path)
+
+    def get_driver_path(self, path, revision):
+        return os.path.join(path, str(revision), self.__drivername)
