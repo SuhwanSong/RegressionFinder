@@ -7,7 +7,7 @@ from helper import FileManager
 from selenium import webdriver
 from collections import defaultdict
 
-from os import environ, getenv
+from os import environ
 from os.path import dirname, join, abspath, splitext, exists
 
 from chrome_binary import ChromeBinary
@@ -24,11 +24,9 @@ return attrs;
 class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
         environ["DBUS_SESSION_BUS_ADDRESS"] = '/dev/null'
-        width = getenv('width')
-        height = getenv('height')
 
-        self.__width = 800 if not width else int(width)
-        self.__height = 300 if not height else int(height)
+        self.__width = 800
+        self.__height = 300
 
         parent_dir = FileManager.get_parent_dir(__file__)
         browser_dir = join(parent_dir, browser_type)
