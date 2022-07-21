@@ -30,5 +30,6 @@ class TestBinary(unittest.TestCase):
             browser_path = fb.get_browser_path(outdir, ver)
             driver_path = fb.get_driver_path(outdir, ver)
 
+
             self.assertTrue(os.path.exists(browser_path))
             self.assertTrue(os.path.exists(driver_path))
