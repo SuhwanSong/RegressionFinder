@@ -109,7 +109,10 @@ class Browser:
         """, width, height)
         self.browser.set_window_size(*window_size)
 
-    # Adjust viewport size to 800x300 due to firefox 
+    # Due to https://github.com/mozilla/geckodriver/issues/1744, setting the
+    # width/height of firefox includes some browser UI. This workaround is
+    # needed to resize the browser contents so screenshots are the appropriate
+    # size, rather than [height] - [ui height].
     def __adjust_viewport_size(self):
         width, height = self.exec_script('return [window.innerWidth, window.innerHeight]')
         self.browser.set_window_size(
