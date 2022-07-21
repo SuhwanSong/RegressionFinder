@@ -1,3 +1,4 @@
+import sys
 import time, psutil
 from pathlib import Path
 from helper import ImageDiff
@@ -6,10 +7,10 @@ from helper import FileManager
 from selenium import webdriver
 from collections import defaultdict
 
-from os import environ, getenv
+from os import environ
 from os.path import dirname, join, abspath, splitext, exists
 
-from chrome_binary import ensure_chrome_binaries
+from chrome_binary import ChromeBinary
 
 GET_ATTRNAMES="""
 let attrs = [];
@@ -24,11 +25,13 @@ class Browser:
     def __init__(self, browser_type: str, commit_version: int) -> None:
         environ["DBUS_SESSION_BUS_ADDRESS"] = '/dev/null'
 
+        self.__width = 800
+        self.__height = 300
+
         parent_dir = FileManager.get_parent_dir(__file__)
         browser_dir = join(parent_dir, browser_type)
         if not exists(browser_dir):
             Path(browser_dir).mkdir(parents=True, exist_ok=True)
-        browser_path = join(browser_dir, str(commit_version), browser_type)
 
         if browser_type == 'chrome':
             options = [
@@ -36,17 +39,24 @@ class Browser:
                     '--disable-seccomp-sandbox',
                     '--disable-logging',
                     '--disable-gpu',
+                    f'--window-size={self.__width},{self.__height}',
                     ]
             self.options = webdriver.chrome.options.Options()
-            ensure_chrome_binaries(browser_dir, commit_version)
+            cb = ChromeBinary()
+            cb.ensure_chrome_binaries(browser_dir, commit_version)
+            browser_path = cb.get_browser_path(browser_dir, commit_version)
+            self.__driver_path = cb.get_driver_path(browser_dir, commit_version)
 
         elif browser_type == 'firefox':
             options = [
                     '--headless',
-                    '--disable-gpu'
+                    '--disable-gpu',
+                    f'--width={self.__width}',
+                    f'--height={self.__height}',
                     ]
             self.options = webdriver.firefox.options.Options()
-
+            browser_path = join(browser_dir, str(commit_version), browser_type)
+            self.__driver_path = browser_path + 'driver'
         else:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
 
@@ -66,10 +76,10 @@ class Browser:
             try:
                 if self.__browser_type == 'chrome':
                     self.browser = webdriver.Chrome(options=self.options,
-                            executable_path=self.options.binary_location + 'driver')
+                            executable_path=self.__driver_path)
                 elif self.__browser_type == 'firefox':
                     self.browser = webdriver.Firefox(options=self.options,
-                            executable_path=self.options.binary_location + 'driver')
+                            executable_path=self.__driver_path)
                 else:
                     raise ValueError('Check browser type')
                 break
@@ -79,14 +89,11 @@ class Browser:
 
         # System crashes if fails to start browser.
         if self.browser is None:
-            sys.exit(f"Browser {version} fails to start..")
-        WIDTH = getenv('WIDTH')
-        WIDTH = 800 if not WIDTH else int(WIDTH)
-        HEIGHT = getenv('HEIGHT')
-        HEIGHT = 300 if not HEIGHT else int(HEIGHT)
+            print (f"Browser {self.version} fails to start..")
+            sys.exit(1)
         TIMEOUT = 10
 
-        self.__set_viewport_size(WIDTH, HEIGHT)
+        self.__adjust_viewport_size()
         self.browser.set_script_timeout(TIMEOUT)
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
@@ -100,6 +107,15 @@ class Browser:
         """, width, height)
         self.browser.set_window_size(*window_size)
 
+    # Due to https://github.com/mozilla/geckodriver/issues/1744, setting the
+    # width/height of firefox includes some browser UI. This workaround is
+    # needed to resize the browser contents so screenshots are the appropriate
+    # size, rather than [height] - [ui height].
+    def __adjust_viewport_size(self):
+        width, height = self.exec_script('return [window.innerWidth, window.innerHeight]')
+        self.browser.set_window_size(
+                self.__width + (self.__width - width),
+                self.__height + (self.__height - height))
 
     def get_screenshot(self):
         for attempt in range(5):
@@ -112,7 +128,7 @@ class Browser:
             except Exception as e:
                 continue
 
-        return None 
+        return None
 
     def __screenshot_and_hash(self, name=None):
         png = self.get_screenshot()
@@ -132,7 +148,7 @@ class Browser:
         return True
 
     def kill_browser_by_pid(self):
-        if not self.browser: 
+        if not self.browser:
             return False
         br = self.browser
         if not br.session_id or not br.service or not br.service.process:
@@ -162,11 +178,11 @@ class Browser:
                 self.setup_browser()
             try:
                 self.browser.get('file://' + abspath(html_file))
-                return 
+                return
             except Exception as e:
                 continue
 
-        return None 
+        return None
 
     def run_html(self, html_file: str):
         if self.__num_of_run == 1000:
@@ -181,7 +197,7 @@ class Browser:
 
     def get_hash_from_html(self, html_file, save_shot: bool = False):
         ret = self.run_html(html_file)
-        if not ret: return 
+        if not ret: return
 
         name_noext = splitext(html_file)[0]
         screenshot_name = f'{name_noext}_{self.version}.png' if save_shot else None
