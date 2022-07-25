@@ -12,7 +12,7 @@ An automatic tool which finds regressions in Chrome browser.
 
 ```shell
 $ git clone https://github.com/SuhwanSong/RegressionFinder.git
-$ cd RegressionFinzer
+$ cd RegressionFinder
 $ ./setup.sh
 ```
 
