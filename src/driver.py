@@ -11,6 +11,7 @@ from os import environ
 from os.path import dirname, join, abspath, splitext, exists
 
 from chrome_binary import ChromeBinary
+from firefox_binary import FirefoxBinary
 
 GET_ATTRNAMES="""
 let attrs = [];
@@ -55,8 +56,10 @@ class Browser:
                     f'--height={self.__height}',
                     ]
             self.options = webdriver.firefox.options.Options()
-            browser_path = join(browser_dir, str(commit_version), browser_type)
-            self.__driver_path = browser_path + 'driver'
+            fb = FirefoxBinary()
+            fb.ensure_firefox_binaries(browser_dir, commit_version)
+            browser_path = fb.get_browser_path(browser_dir, commit_version)
+            self.__driver_path = fb.get_driver_path(browser_dir, commit_version)
         else:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
 
