@@ -20,14 +20,16 @@ $ ./setup.sh
 - First, you need to generate the html files.
 
 ```shell
-$ cd RegressionFinzer/src/domato
+$ cd RegressionFinder/src/domato
 $ python3 generator.py --output_dir ./html_testcases --no_of_files 10000
 ```
 * This will generate 10,000 testcases in `./html_testcases` directory. 
 * Now you can run RegressionFinder with `r2z2.py`.
-* It provides six options:
+* It provides eight options:
   * -b: The base version of Chrome (e.g., 87)
+  * --base-flags: The flags for base Chrome (e.g., "")
   * -t: The target version of Chrome (e.g., 88)
+  * --target-flags: The flags for target Chrome (e.g., "--enable-blink-features=LayoutNG")
   * -f: The version of Firefox (e.g., 101.0)
   * -i: The html testcase directory
   * -o: The output directory
@@ -35,13 +37,19 @@ $ python3 generator.py --output_dir ./html_testcases --no_of_files 10000
 
 - Move to `RegressionFinder/src` directory and run the following command:
 ```shell
-python3 r2z2.py -b 87 -t 88 -f 101.0 -i ./domato/html_testcases -o ./results -j 4
+$ python3 r2z2.py -b 87 -t 88 -f 101.0 -i ./domato/html_testcases -o ./results -j 4
+```
+
+- Or if you want to test specific flags, run the following command:
+```shell
+$ python3 r2z2.py -b 87 --base-flags="" -t 87 --target-flags="--enable-blink-features=LayoutNG" \ 
+  -f 101.0 -i ./domato/html_testcases -o ./results -j 4
 ```
 
 - When the run is done, you can check the result at `./results` directory.
 ```
 $ ls ./results
-Bisecter  CrossVersion  Minimizer Oracle  Report
+Bisecter  CrossVersion  Minimizer  Oracle  Report
 ```
 
 - Final result is stored in `Report` directory.
