@@ -85,6 +85,15 @@ class Browser:
                             executable_path=self.__driver_path)
                 else:
                     raise ValueError('Check browser type')
+
+                TIMEOUT = 10
+                platform = sys.platform
+                platform_funcs = {'linux': self.__set_viewport_size,
+                                  'darwin': self.__adjust_viewport_size, }
+                platform_funcs[platform]()
+                self.browser.set_script_timeout(TIMEOUT)
+                self.browser.set_page_load_timeout(TIMEOUT)
+                self.browser.implicitly_wait(TIMEOUT)
                 break
 
             except Exception as e:
@@ -94,16 +103,6 @@ class Browser:
         if self.browser is None:
             print (f"Browser {self.version} fails to start..")
             sys.exit(1)
-        TIMEOUT = 10
-
-        platform = sys.platform
-        platform_funcs = {'linux': self.__set_viewport_size,
-                          'darwin': self.__adjust_viewport_size, }
-
-        platform_funcs[platform]()
-        self.browser.set_script_timeout(TIMEOUT)
-        self.browser.set_page_load_timeout(TIMEOUT)
-        self.browser.implicitly_wait(TIMEOUT)
         return True
 
 
