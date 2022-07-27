@@ -96,18 +96,22 @@ class Browser:
             sys.exit(1)
         TIMEOUT = 10
 
-        self.__adjust_viewport_size()
+        platform = sys.platform
+        platform_funcs = {'linux': self.__set_viewport_size,
+                          'darwin': self.__adjust_viewport_size, }
+
+        platform_funcs[platform]()
         self.browser.set_script_timeout(TIMEOUT)
         self.browser.set_page_load_timeout(TIMEOUT)
         self.browser.implicitly_wait(TIMEOUT)
         return True
 
 
-    def __set_viewport_size(self, width, height):
+    def __set_viewport_size(self):
         window_size = self.browser.execute_script("""
         return [window.outerWidth - window.innerWidth + arguments[0],
           window.outerHeight - window.innerHeight + arguments[1]];
-        """, width, height)
+        """, self.__width, self.__height)
         self.browser.set_window_size(*window_size)
 
     # Due to https://github.com/mozilla/geckodriver/issues/1744, setting the

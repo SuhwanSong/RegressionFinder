@@ -78,6 +78,11 @@ class FirefoxBinary:
         def unzip_driver(file, path):
             unzip_tar(file, path)
 
+        version = str(version)
+        binary_dir_path = os.path.join(path, version)
+        if os.path.exists(binary_dir_path):
+            return True
+
         # Multiple threads may call this function simultaneously. To prevent races,
         # a temporary directory is used for downloading, and an atomic rename is
         # used to update the binaries once they are available.
@@ -103,7 +108,7 @@ class FirefoxBinary:
             os.rename(firefox_tmpdir, os.path.join(path, version))
 
     def get_browser_path(self, path, version):
-        return os.path.join(path, version, self.__firefox_filepath)
+        return os.path.join(path, str(version), self.__firefox_filepath)
 
     def get_driver_path(self, path, version):
-        return os.path.join(path, version, self.__drivername)
+        return os.path.join(path, str(version), self.__drivername)
