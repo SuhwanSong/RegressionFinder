@@ -22,6 +22,7 @@ from bisect import bisect
 from pathlib import Path
 from shutil import copyfile
 from bs4 import BeautifulSoup
+from collections import defaultdict
 
 
 class CrossVersion(Thread):
@@ -40,8 +41,10 @@ class CrossVersion(Thread):
 
     def start_browsers(self, vers: Tuple[int, int, int]) -> bool:
         self.stop_browsers()
+        self.helper.acquire_lock()
         self.__br_list.append(Browser('chrome', vers[0]))
         self.__br_list.append(Browser('chrome', vers[1]))
+        self.helper.release_lock()
         for br in self.__br_list:
             if not br.setup_browser():
                 return False
@@ -118,9 +121,11 @@ class Oracle(Thread):
     def report_mode(self) -> None:
         self.saveshot = True
 
-    def start_ref_browser(self, ver: int) -> bool:
+    def start_ref_browser(self, ver: str) -> bool:
         self.stop_ref_browser()
+        self.helper.acquire_lock()
         self.ref_br = Browser(self.ref_br_type, ver)
+        self.helper.release_lock()
         return self.ref_br.setup_browser()
 
     def stop_ref_browser(self):
@@ -177,7 +182,9 @@ class Bisecter(Thread):
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
+        self.helper.acquire_lock()
         self.ref_br = Browser('chrome', ver)
+        self.helper.release_lock()
         return self.ref_br.setup_browser()
 
     def stop_ref_browser(self) -> None:
@@ -234,7 +241,13 @@ class Bisecter(Thread):
             if ref_hash is None:
                 continue
 
-            elif not ImageDiff.diff_images(hashes[0], ref_hash):
+            for _ in range(1):
+                new_ref_hash = self.get_pixel_from_html(html_file)
+                if new_ref_hash != ref_hash: continue
+
+            
+
+            if not ImageDiff.diff_images(hashes[0], ref_hash):
                 if mid_idx + 1 == end_idx:
                     hpr.update_postq((mid, end, ref), html_file, hashes)
                     #print (html_file, mid, end, 'postq 1')
@@ -652,30 +665,53 @@ class FirefoxRegression(Preprocesser):
         ref_br.setup_browser()
 
         hpr = self.ioq
+
+        report_dict = defaultdict(list)
+        bug_dict = defaultdict(int)
+        nonbug_dict = defaultdict(int)
+
         while True:
             vers = hpr.get_vers()
             if not vers: break
 
             result = hpr.pop_from_queue()
             if not result: break
+
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
 
-            ref_hash = ref_br.get_hash_from_html(html_file, False)
-            if ref_hash is None:
-                continue
             try:
                 ref_hash = ref_br.get_hash_from_html(html_file, True)
             except Exception as e:
                 print (e)
+                continue
+
+            culprit = vers[1]
+            report_dict[culprit].append(html_file)
 
             if not ImageDiff.diff_images(hashes[0], ref_hash):
+                bug_dict[culprit] += 1
                 hpr.update_postq(vers, html_file, hashes)
+            else:
+                nonbug_dict[culprit] += 1
 
         ref_br.kill_browser()
         self.ioq.move_to_preqs()
         dir_path = os.path.join(self.out_dir, 'Report')
         Path(dir_path).mkdir(parents=True, exist_ok=True)
-        self.ioq.dump_queue_as_csv(os.path.join(dir_path, 'result.csv'))
+        self.ioq.dump_queue_as_csv(dir_path)
 
+        vers = list(report_dict.keys())
+        vers.sort()
+        data = []
+        for ver in vers:
+            ret = ''
+            if ver in bug_dict and ver in nonbug_dict:
+                ret = 'both'
+            elif ver in bug_dict:
+                ret = 'yes'
+            else:
+                ret = 'no'
+            data.append(f'{ver} {ret}\n')
+        FileManager.write_file(os.path.join(dir_path, 'overall.txt'), ''.join(data))

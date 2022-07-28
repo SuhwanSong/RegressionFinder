@@ -85,6 +85,11 @@ class IOQueue:
 
         self.start_time = time.time()
 
+    def acquire_lock(self):
+        self.__queue_lock.acquire()
+
+    def release_lock(self):
+        self.__queue_lock.release()
 
     def reset_lock(self):
         if self.__queue_lock.locked():
@@ -184,24 +189,18 @@ class IOQueue:
     def dump_queue_as_csv(self, path):
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
             if not acquired: return 
-            bug_commits = set()
-            all_commits = set(listdir(dirname(path)))
+            path = join(path, 'result.csv')
             with open(path, 'w') as csvfile:
                 header = ['base', 'target', 'ref', 'file']
                 csvfile.write(','.join(header))
                 csvfile.write('\n')
                 keys = sorted(list(self.__preqs.keys()))
                 for key in keys:
-                    bug_commits.add(key[1])
                     q = self.__preqs[key]
                     for value in sorted(list(q.queue)):
                         html_file, hashes = value
                         base, target, ref = key
                         csvfile.write(f'{base}, {target}, {ref}, {html_file}\n')
-                total = len(all_commits)
-                tp = len(bug_commits)
-                fp = total - tp
-                csvfile.write(f'TOTAL: {total}, TP: {tp}, FP: {fp}\n')
 
     def dump_queue_with_sort(self, dir_path):
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
