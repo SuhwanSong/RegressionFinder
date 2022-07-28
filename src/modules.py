@@ -41,10 +41,10 @@ class CrossVersion(Thread):
 
     def start_browsers(self, vers: Tuple[int, int, int]) -> bool:
         self.stop_browsers()
-        self.helper.acquire_lock()
+        self.helper.download_chrome(vers[0])
+        self.helper.download_chrome(vers[1])
         self.__br_list.append(Browser('chrome', vers[0]))
         self.__br_list.append(Browser('chrome', vers[1]))
-        self.helper.release_lock()
         for br in self.__br_list:
             if not br.setup_browser():
                 return False
@@ -123,9 +123,7 @@ class Oracle(Thread):
 
     def start_ref_browser(self, ver: str) -> bool:
         self.stop_ref_browser()
-        self.helper.acquire_lock()
         self.ref_br = Browser(self.ref_br_type, ver)
-        self.helper.release_lock()
         return self.ref_br.setup_browser()
 
     def stop_ref_browser(self):
@@ -182,9 +180,8 @@ class Bisecter(Thread):
 
     def start_ref_browser(self, ver: int) -> bool:
         self.stop_ref_browser()
-        self.helper.acquire_lock()
+        self.helper.download_chrome(ver)
         self.ref_br = Browser('chrome', ver)
-        self.helper.release_lock()
         return self.ref_br.setup_browser()
 
     def stop_ref_browser(self) -> None:
@@ -234,7 +231,8 @@ class Bisecter(Thread):
             if cur_mid != mid:
                 cur_mid = mid
                 self.get_chrome(cur_mid)
-                if not self.start_ref_browser(cur_mid):
+                is_good = self.start_ref_browser(cur_mid)
+                if not is_good:
                     continue
 
             ref_hash = self.get_pixel_from_html(html_file)
@@ -245,7 +243,6 @@ class Bisecter(Thread):
                 new_ref_hash = self.get_pixel_from_html(html_file)
                 if new_ref_hash != ref_hash: continue
 
-            
 
             if not ImageDiff.diff_images(hashes[0], ref_hash):
                 if mid_idx + 1 == end_idx:
