@@ -42,8 +42,8 @@ $ python3 r2z2.py -b 87 -t 88 -f 101.0 -i ./domato/html_testcases -o ./results -
 
 - Or if you want to test specific flags, run the following command:
 ```shell
-$ python3 r2z2.py -b 87 --base-flags="" -t 87 --target-flags="--enable-blink-features=LayoutNG" \ 
-  -f 101.0 -i ./domato/html_testcases -o ./results -j 4
+$ BASEFLAG="" TARGETFLAG="--enable-blink-features=LayoutNG" python3 r2z2.py -b 87 -t 87 -f 101.0 \
+-i ./domato/html_testcases -o ./results -j 4
 ```
 
 - When the run is done, you can check the result at `./results` directory.
