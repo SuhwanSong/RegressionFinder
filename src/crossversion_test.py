@@ -65,3 +65,21 @@ class TestCrossVersion(unittest.TestCase):
     def test_nochange_html(self):
         input_html_path, ref = cross_version_(NOCHANGE_HTML)
         self.assertEqual(ref, None)
+
+
+    def test_flag(self):
+        bf = ''
+        tf = '--enable-blink-features=LayoutNG'
+        os.environ["BASEFLAG"] = bf
+        os.environ["TARGETFLAG"] = tf
+        with tempfile.TemporaryDirectory() as outdir:
+            vm = VersionManager()
+            rev = vm.get_revision(90)
+            ioq = IOQueue([], [rev, rev], None)
+            cv = CrossVersion(ioq)
+
+            cv.start_browsers([rev, rev, None])
+            self.assertEqual(cv.br_list[0].flags, [])
+            self.assertEqual(cv.br_list[1].flags, [tf])
+
+            cv.stop_browsers()
