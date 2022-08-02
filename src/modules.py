@@ -33,6 +33,9 @@ class CrossVersion(Thread):
         self.helper = helper
         self.saveshot = False
 
+        self.baseflag = os.getenv('BASEFLAG', '')
+        self.targetflag = os.getenv('TARGETFLAG', '')
+
     def report_mode(self) -> None:
         self.saveshot = True
 
@@ -43,8 +46,9 @@ class CrossVersion(Thread):
         self.stop_browsers()
         self.helper.download_chrome(vers[0])
         self.helper.download_chrome(vers[1])
-        self.__br_list.append(Browser('chrome', vers[0]))
-        self.__br_list.append(Browser('chrome', vers[1]))
+
+        self.__br_list.append(Browser('chrome', vers[0], self.baseflag))
+        self.__br_list.append(Browser('chrome', vers[1], self.targetflag))
         for br in self.__br_list:
             if not br.setup_browser():
                 return False
@@ -631,6 +635,7 @@ class FirefoxRegression(Preprocesser):
                  base_version: int, target_version: int, oracle_version: int) -> None:
         super().__init__(input_dir, output_dir, num_of_threads, base_version, target_version)
 
+
         self.tester.extend([
                 Oracle,
                 Bisecter,
@@ -643,6 +648,8 @@ class FirefoxRegression(Preprocesser):
 
         self.oracle_br = {'type': 'firefox', 'ver': oracle_version}
 
+    def skip_bisect(self):
+        self.tester.remove(Bisecter)
 
     def answer(self, answer_version) -> None:
         print ('answer step')
