@@ -144,7 +144,7 @@ class IOQueue:
                 self.__preqs.pop(vers)
                 self.__vers = self.__select_vers()
             self.num_of_tests += 1
-            return value
+            return value, vers
 
     def get_vers(self) -> Optional[Tuple[int, int, int]]:
         with acquire_timeout(self.__queue_lock, 1000) as acquired:

@@ -51,7 +51,8 @@ def oracle_(html):
 
 class TestOracle(unittest.TestCase):
     def test_bug_html(self):
-        input_html_path, ref = oracle_(BUG_HTML)
+        input_html_path, popped = oracle_(BUG_HTML)
+        ref, _ = popped
 
         html_file, hashes = ref
         self.assertEqual(html_file, input_html_path)

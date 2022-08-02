@@ -113,6 +113,9 @@ class Browser:
                 break
             except Exception as e:
                 print (e)
+                time.sleep(0.5)
+                continue
+
         return True
 
 
