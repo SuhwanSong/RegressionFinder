@@ -24,6 +24,9 @@ from shutil import copyfile
 from bs4 import BeautifulSoup
 from collections import defaultdict
 
+from multiprocessing import Process
+from domato.generator import generate_testcases
+
 
 class CrossVersion(Thread):
     def __init__(self, helper: IOQueue) -> None:
@@ -531,6 +534,28 @@ class Preprocesser:
         ]
 
         self.oracle_br = {'type': None, 'ver': None}
+        self.__generate_html_if_empty()
+
+    def __generate_html_if_empty(self):
+        testcases = FileManager.get_all_files(self.in_dir, '.html')
+        if len(testcases) != 0: return
+        Path(self.in_dir).mkdir(parents=True, exist_ok=True)
+
+        num_of_tests_for_each_thread = 10000
+
+        total_num_of_testcases = num_of_tests_for_each_thread * self.num_of_threads
+
+        print(f'{self.in_dir} is empty, generate {total_num_of_testcases} testcases in {self.in_dir}')
+
+        ps = []
+        for i in range(self.num_of_threads):
+            p = Process(target=generate_testcases, args=(self.in_dir, i, num_of_tests_for_each_thread))
+            p.start()
+            ps.append(p)
+
+        for p in ps:
+            p.join()
+
 
     def skip_minimizer(self):
         self.tester.remove(Minimizer)
