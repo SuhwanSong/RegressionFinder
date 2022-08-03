@@ -20,6 +20,7 @@ from PIL import Image
 from io import BytesIO
 from os import walk, listdir, getenv
 from os.path import join, dirname, abspath, exists, basename
+from chrome_binary import ChromeBinary
 
 @contextmanager
 def acquire_timeout(lock, timeout):
@@ -85,10 +86,18 @@ class IOQueue:
 
         self.start_time = time.time()
 
-
     def reset_lock(self):
         if self.__queue_lock.locked():
             self.__queue_lock.release()
+
+    def download_chrome(self, commit_version: int) -> None:
+        self.__queue_lock.acquire()
+        browser_type = 'chrome'
+        parent_dir = FileManager.get_parent_dir(__file__)
+        browser_dir = join(parent_dir, browser_type)
+        cb = ChromeBinary()
+        cb.ensure_chrome_binaries(browser_dir, commit_version)
+        self.__queue_lock.release()
 
     def build_chrome(self, commit_version: int) -> None:
         browser_type = 'chrome'
@@ -184,24 +193,18 @@ class IOQueue:
     def dump_queue_as_csv(self, path):
         with acquire_timeout(self.__queue_lock, 1000) as acquired:
             if not acquired: return 
-            bug_commits = set()
-            all_commits = set(listdir(dirname(path)))
+            path = join(path, 'result.csv')
             with open(path, 'w') as csvfile:
                 header = ['base', 'target', 'ref', 'file']
                 csvfile.write(','.join(header))
                 csvfile.write('\n')
                 keys = sorted(list(self.__preqs.keys()))
                 for key in keys:
-                    bug_commits.add(key[1])
                     q = self.__preqs[key]
                     for value in sorted(list(q.queue)):
                         html_file, hashes = value
                         base, target, ref = key
                         csvfile.write(f'{base}, {target}, {ref}, {html_file}\n')
-                total = len(all_commits)
-                tp = len(bug_commits)
-                fp = total - tp
-                csvfile.write(f'TOTAL: {total}, TP: {tp}, FP: {fp}\n')
 
     def dump_queue_with_sort(self, dir_path):
         with acquire_timeout(self.__queue_lock, 1000) as acquired:

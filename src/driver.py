@@ -29,42 +29,10 @@ class Browser:
         self.__width = 800
         self.__height = 300
 
-        parent_dir = FileManager.get_parent_dir(__file__)
-        browser_dir = join(parent_dir, browser_type)
-        if not exists(browser_dir):
-            Path(browser_dir).mkdir(parents=True, exist_ok=True)
-
-        if browser_type == 'chrome':
-            options = [
-                    '--headless',
-                    '--disable-seccomp-sandbox',
-                    '--disable-logging',
-                    '--disable-gpu',
-                    f'--window-size={self.__width},{self.__height}',
-                    ]
-            self.options = webdriver.chrome.options.Options()
-            cb = ChromeBinary()
-            cb.ensure_chrome_binaries(browser_dir, commit_version)
-            browser_path = cb.get_browser_path(browser_dir, commit_version)
-            self.__driver_path = cb.get_driver_path(browser_dir, commit_version)
-
-        elif browser_type == 'firefox':
-            options = [
-                    '--headless',
-                    '--disable-gpu',
-                    f'--width={self.__width}',
-                    f'--height={self.__height}',
-                    ]
-            self.options = webdriver.firefox.options.Options()
-            fb = FirefoxBinary()
-            fb.ensure_firefox_binaries(browser_dir, commit_version)
-            browser_path = fb.get_browser_path(browser_dir, commit_version)
-            self.__driver_path = fb.get_driver_path(browser_dir, commit_version)
-        else:
+        browser_types = ['chrome', 'firefox']
+        if browser_type not in browser_types:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
 
-        self.options.binary_location = browser_path
-        for op in options: self.options.add_argument(op)
 
         self.__num_of_run = 0
         self.__browser_type = browser_type
@@ -75,17 +43,65 @@ class Browser:
     def setup_browser(self):
         self.__num_of_run = 0
         self.browser = None
+        parent_dir = FileManager.get_parent_dir(__file__)
+        browser_dir = join(parent_dir, self.__browser_type)
+        if not exists(browser_dir):
+            Path(browser_dir).mkdir(parents=True, exist_ok=True)
+
         for _ in range(5):
             try:
                 if self.__browser_type == 'chrome':
-                    self.browser = webdriver.Chrome(options=self.options,
-                            executable_path=self.__driver_path)
+                    options = [
+                            '--headless',
+                            '--disable-seccomp-sandbox',
+                            '--disable-logging',
+                            '--disable-gpu',
+                            f'--window-size={self.__width},{self.__height}',
+                            ]
+                    option = webdriver.chrome.options.Options()
+                    cb = ChromeBinary()
+                    cb.ensure_chrome_binaries(browser_dir, self.version)
+
+                    browser_path = cb.get_browser_path(browser_dir, self.version)
+                    option.binary_location = browser_path
+                    for op in options: option.add_argument(op)
+
+                    driver_path = cb.get_driver_path(browser_dir, self.version)
+                    self.browser = webdriver.Chrome(options=option,
+                            executable_path=driver_path)
                 elif self.__browser_type == 'firefox':
-                    self.browser = webdriver.Firefox(options=self.options,
-                            executable_path=self.__driver_path)
+                    options = [
+                            '--headless',
+                            '--disable-gpu',
+                            f'--width={self.__width}',
+                            f'--height={self.__height}',
+                            ]
+                    option = webdriver.firefox.options.Options()
+                    fb = FirefoxBinary()
+                    fb.ensure_firefox_binaries(browser_dir, self.version)
+                    browser_path = fb.get_browser_path(browser_dir, self.version)
+                    option.binary_location = browser_path
+                    for op in options: option.add_argument(op)
+
+                    driver_path = fb.get_driver_path(browser_dir, self.version)
+                    self.browser = webdriver.Firefox(options=option,
+                            executable_path=driver_path)
                 else:
                     raise ValueError('Check browser type')
 
+                break
+
+            except Exception as e:
+                print (e)
+                continue
+
+        # System crashes if fails to start browser.
+        if self.browser is None:
+            print (f"Browser {self.version} fails to start..")
+            sys.exit(1)
+
+        for _ in range(5):
+            try:
                 TIMEOUT = 10
                 platform = sys.platform
                 platform_funcs = {'linux': self.__set_viewport_size,
@@ -95,14 +111,8 @@ class Browser:
                 self.browser.set_page_load_timeout(TIMEOUT)
                 self.browser.implicitly_wait(TIMEOUT)
                 break
-
             except Exception as e:
-                continue
-
-        # System crashes if fails to start browser.
-        if self.browser is None:
-            print (f"Browser {self.version} fails to start..")
-            sys.exit(1)
+                print (e)
         return True
 
 
