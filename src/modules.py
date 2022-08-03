@@ -90,11 +90,10 @@ class CrossVersion(Thread):
         hpr = self.helper
         while True:
 
-            vers = hpr.get_vers()
-            if not vers: break
+            popped = hpr.pop_from_queue()
+            if not popped: break
 
-            result = hpr.pop_from_queue()
-            if not result: break
+            result, vers = popped
             html_file, _ = result
 
             if cur_vers != vers:
@@ -140,11 +139,10 @@ class Oracle(Thread):
         cur_refv = None
         hpr = self.helper
         while True:
-            vers = hpr.get_vers()
-            if not vers: break
+            popped = hpr.pop_from_queue()
+            if not popped: break
 
-            result = hpr.pop_from_queue()
-            if not result: break
+            result, vers = popped
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
@@ -200,13 +198,10 @@ class Bisecter(Thread):
         hpr = self.helper
 
         while True:
-            vers = hpr.get_vers()
-            if not vers:
-                break
+            popped = hpr.pop_from_queue()
+            if not popped: break
 
-            result = hpr.pop_from_queue(False)
-            if not result:
-                break
+            result, vers = popped
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
@@ -231,20 +226,14 @@ class Bisecter(Thread):
             if cur_mid != mid:
                 cur_mid = mid
                 self.get_chrome(cur_mid)
-                is_good = self.start_ref_browser(cur_mid)
-                if not is_good:
+                if not self.start_ref_browser(cur_mid):
                     continue
 
             ref_hash = self.get_pixel_from_html(html_file)
             if ref_hash is None:
                 continue
 
-            for _ in range(1):
-                new_ref_hash = self.get_pixel_from_html(html_file)
-                if new_ref_hash != ref_hash: continue
-
-
-            if not ImageDiff.diff_images(hashes[0], ref_hash):
+            elif not ImageDiff.diff_images(hashes[0], ref_hash):
                 if mid_idx + 1 == end_idx:
                     hpr.update_postq((mid, end, ref), html_file, hashes)
                     #print (html_file, mid, end, 'postq 1')
@@ -494,11 +483,10 @@ class Minimizer(CrossVersion):
         cur_vers = None
         hpr = self.helper
         while True:
-            vers = hpr.get_vers()
-            if not vers: break
+            popped = hpr.pop_from_queue()
+            if not popped: break
 
-            result = hpr.pop_from_queue()
-            if not result: break
+            result, vers = popped
             html_file, _ = result
 
             if cur_vers != vers:
@@ -666,14 +654,11 @@ class FirefoxRegression(Preprocesser):
         report_dict = defaultdict(list)
         bug_dict = defaultdict(int)
         nonbug_dict = defaultdict(int)
-
         while True:
-            vers = hpr.get_vers()
-            if not vers: break
+            popped = hpr.pop_from_queue()
+            if not popped: break
 
-            result = hpr.pop_from_queue()
-            if not result: break
-
+            result, vers = popped
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')

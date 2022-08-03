@@ -113,6 +113,8 @@ class Browser:
                 break
             except Exception as e:
                 print (e)
+                continue
+
         return True
 
 

@@ -84,6 +84,7 @@ class ChromeBinary:
         if os.path.exists(binary_dir_path):
             return True
 
+
         # Multiple threads may call this function simultaneously. To prevent races,
         # a temporary directory is used for downloading, and an atomic rename is
         # used to update the binaries once they are available.

@@ -43,7 +43,8 @@ def cross_version_(html):
 
 class TestCrossVersion(unittest.TestCase):
     def test_change_html(self):
-        input_html_path, ref = cross_version_(CHANGE_HTML)
+        input_html_path, popped = cross_version_(CHANGE_HTML)
+        ref, _ = popped
 
         html_file, hashes = ref
         self.assertEqual(html_file, input_html_path)
