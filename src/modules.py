@@ -28,38 +28,42 @@ from collections import defaultdict
 class CrossVersion(Thread):
     def __init__(self, helper: IOQueue) -> None:
         super().__init__()
-        self.__br_list = []
+        self.br_list = []
 
         self.helper = helper
         self.saveshot = False
+
+        self.baseflag = os.getenv('BASEFLAG', '')
+        self.targetflag = os.getenv('TARGETFLAG', '')
 
     def report_mode(self) -> None:
         self.saveshot = True
 
     def get_newer_browser(self) -> Browser:
-        return self.__br_list[-1] if self.__br_list else None
+        return self.br_list[-1] if self.br_list else None
 
     def start_browsers(self, vers: Tuple[int, int, int]) -> bool:
         self.stop_browsers()
         self.helper.download_chrome(vers[0])
         self.helper.download_chrome(vers[1])
-        self.__br_list.append(Browser('chrome', vers[0]))
-        self.__br_list.append(Browser('chrome', vers[1]))
-        for br in self.__br_list:
+
+        self.br_list.append(Browser('chrome', vers[0], self.baseflag))
+        self.br_list.append(Browser('chrome', vers[1], self.targetflag))
+        for br in self.br_list:
             if not br.setup_browser():
                 return False
         return True
 
     def stop_browsers(self) -> None:
-        for br in self.__br_list:
+        for br in self.br_list:
             br.kill_browser()
-        self.__br_list.clear()
+        self.br_list.clear()
 
     def cross_version_test_html(self, html_file: str) -> Optional[list]:
         img_hashes = []
 
         thread_id = current_thread()
-        for br in self.__br_list:
+        for br in self.br_list:
             self.helper.record_current_test(thread_id, br, html_file)
             hash_v = br.get_hash_from_html(html_file, self.saveshot)
             if hash_v is None:
@@ -631,6 +635,7 @@ class FirefoxRegression(Preprocesser):
                  base_version: int, target_version: int, oracle_version: int) -> None:
         super().__init__(input_dir, output_dir, num_of_threads, base_version, target_version)
 
+
         self.tester.extend([
                 Oracle,
                 Bisecter,
@@ -642,7 +647,11 @@ class FirefoxRegression(Preprocesser):
         ])
 
         self.oracle_br = {'type': 'firefox', 'ver': oracle_version}
+        if os.getenv('BASEFLAG', '') != os.getenv('TARGETFLAG', ''):
+            self.skip_bisect()
 
+    def skip_bisect(self):
+        self.tester.remove(Bisecter)
 
     def answer(self, answer_version) -> None:
         print ('answer step')

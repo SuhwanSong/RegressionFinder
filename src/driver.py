@@ -23,7 +23,7 @@ return attrs;
 """
 
 class Browser:
-    def __init__(self, browser_type: str, commit_version: int) -> None:
+    def __init__(self, browser_type: str, commit_version: int, flags: str = '') -> None:
         environ["DBUS_SESSION_BUS_ADDRESS"] = '/dev/null'
 
         self.__width = 800
@@ -33,12 +33,16 @@ class Browser:
         if browser_type not in browser_types:
             raise ValueError('[DEBUG] only chrome or firefox are allowed')
 
-
+        self.browser = None
         self.__num_of_run = 0
         self.__browser_type = browser_type
 
-        self.browser = None
         self.version = commit_version
+        self.flags = []
+
+        if flags:
+            for flag in flags.split(' '):
+                self.flags.append(flag)
 
     def setup_browser(self):
         self.__num_of_run = 0
@@ -58,6 +62,7 @@ class Browser:
                             '--disable-gpu',
                             f'--window-size={self.__width},{self.__height}',
                             ]
+                    options.extend(self.flags)
                     option = webdriver.chrome.options.Options()
                     cb = ChromeBinary()
                     cb.ensure_chrome_binaries(browser_dir, self.version)
