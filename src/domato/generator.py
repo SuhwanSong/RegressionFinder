@@ -477,6 +477,18 @@ def get_option(option_name):
             return sys.argv[i][len(option_name) + 1:]
     return None
 
+def generate_testcases(out_dir, index, num_of_tests):
+    fuzzer_dir = os.path.dirname(__file__)
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+    out_dir = os.path.join(out_dir, str(index))
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+    outfiles = []
+    for i in range(num_of_tests):
+        outfiles.append(os.path.join(out_dir, str(index) + '-' + str(i).zfill(7) + '.html'))
+    generate_samples(fuzzer_dir, outfiles)
+
 
 def main(index):
     fuzzer_dir = os.path.dirname(__file__)
@@ -508,7 +520,6 @@ def main(index):
             outfiles.append(os.path.join(out_dir, str(index) + '-' + str(i).zfill(7) + '.html'))
 
         generate_samples(fuzzer_dir, outfiles)
-        
 
     elif len(sys.argv) > 1:
         outfile = sys.argv[1]
