@@ -82,12 +82,7 @@ class ChromeBinary:
         revision = str(revision)
         binary_dir_path = os.path.join(path, revision)
         if os.path.exists(binary_dir_path):
-            brp = self.get_browser_path(path, revision)
-            drp = self.get_driver_path(path, revision)
-            if os.path.exists(brp) and os.path.exists(drp):
-                return True
-            else:
-                shutil.rmtree(binary_dir_path)
+            return True
 
 
         # Multiple threads may call this function simultaneously. To prevent races,

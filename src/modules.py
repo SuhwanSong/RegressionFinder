@@ -654,15 +654,11 @@ class FirefoxRegression(Preprocesser):
         report_dict = defaultdict(list)
         bug_dict = defaultdict(int)
         nonbug_dict = defaultdict(int)
-        num = 0
         while True:
             popped = hpr.pop_from_queue()
             if not popped: break
 
             result, vers = popped
-
-            num += 1
-
             html_file, hashes = result
             if len(hashes) != 2:
                 raise ValueError('Something wrong in hashes...')
@@ -682,7 +678,6 @@ class FirefoxRegression(Preprocesser):
             else:
                 nonbug_dict[culprit] += 1
 
-        print ('Tested in answer()', num)
         ref_br.kill_browser()
         self.ioq.move_to_preqs()
         dir_path = os.path.join(self.out_dir, 'Report')
