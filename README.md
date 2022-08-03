@@ -39,6 +39,7 @@ $ python3 generator.py --output_dir ./html_testcases --no_of_files 10000
 ```shell
 $ python3 r2z2.py -b 87 -t 88 -f 101.0 -i ./domato/html_testcases -o ./results -j 4
 ```
+- Even if the input directory is empty, it will automatically generate html testcases in the input directory.
 
 - Or if you want to test specific flags, run the following command:
 ```shell
